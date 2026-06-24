@@ -78,8 +78,12 @@ button{font-family:'IBM Plex Mono',monospace;cursor:pointer;}
   </header>
 
   <!-- SECTION 1 — HERO -->
-  <section style="position:relative;min-height:100vh;display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));align-items:center;gap:24px;max-width:1320px;margin:0 auto;padding:110px 6vw 70px;z-index:5;">
-    <div style="position:relative;z-index:4;">
+  <section style="position:relative;min-height:100vh;overflow:hidden;z-index:5;">
+    <!-- Full-bleed 3D canvas — no container box -->
+    <canvas id="heroCanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab;z-index:1;"></canvas>
+
+    <!-- Text overlay -->
+    <div style="position:relative;z-index:4;max-width:1320px;margin:0 auto;padding:110px 6vw 70px;pointer-events:none;">
       <div class="reveal" style="display:flex;align-items:center;gap:14px;font-size:12px;letter-spacing:.3em;color:#ffb24d;margin-bottom:26px;">
         <span style="width:42px;height:1px;background:#ffb24d;display:inline-block;"></span>
         RADIO-FREQUENCY IDENTIFICATION
@@ -87,14 +91,14 @@ button{font-family:'IBM Plex Mono',monospace;cursor:pointer;}
       <h1 class="reveal" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(58px,11vw,150px);line-height:.84;letter-spacing:-.03em;margin:0;color:#e8f3fb;">
         R<span style="color:#ffb24d;">F</span>ID
       </h1>
-      <p class="reveal" style="max-width:54ch;font-size:clamp(15px,1.5vw,19px);line-height:1.7;color:#bcd6ea;margin:26px 0 0;">
+      <p class="reveal" style="max-width:46ch;font-size:clamp(15px,1.5vw,19px);line-height:1.7;color:#bcd6ea;margin:26px 0 0;">
         Teknologi yang memakai <strong style="color:#fff;">gelombang radio</strong> untuk mengenali objek dari jarak jauh — tanpa kontak, tanpa garis pandang. Sebuah <em style="color:#ffb24d;font-style:normal;">tag</em> menyimpan identitas, sebuah <em style="color:#ffb24d;font-style:normal;">reader</em> membacanya lewat udara dalam milidetik.
       </p>
-      <div class="reveal" style="display:flex;gap:24px;margin-top:40px;flex-wrap:wrap;align-items:center;">
-        <a href="#teardown" style="display:inline-flex;align-items:center;gap:10px;background:#ffb24d;color:#071423;font-weight:600;font-size:13px;letter-spacing:.1em;padding:15px 26px;border-radius:2px;">
+      <div class="reveal" style="display:flex;gap:24px;margin-top:40px;flex-wrap:wrap;align-items:center;pointer-events:all;">
+        <a href="#teardown" id="heroBedah" style="display:inline-flex;align-items:center;gap:10px;background:#ffb24d;color:#071423;font-weight:600;font-size:13px;letter-spacing:.1em;padding:15px 26px;border-radius:2px;">
           BEDAH KOMPONEN <i class="ph ph-arrow-down"></i>
         </a>
-        <a href="#how" style="display:inline-flex;align-items:center;gap:10px;color:#bcd6ea;font-size:13px;letter-spacing:.1em;padding:14px 4px;border-bottom:1px solid rgba(125,196,240,.3);">
+        <a href="#how" id="heroHow" style="display:inline-flex;align-items:center;gap:10px;color:#bcd6ea;font-size:13px;letter-spacing:.1em;padding:14px 4px;border-bottom:1px solid rgba(125,196,240,.3);pointer-events:all;">
           CARA KERJANYA <i class="ph ph-arrow-right"></i>
         </a>
       </div>
@@ -103,15 +107,12 @@ button{font-family:'IBM Plex Mono',monospace;cursor:pointer;}
       </div>
     </div>
 
-    <div style="position:relative;height:74vh;min-height:440px;">
-      <canvas id="heroCanvas" style="width:100%;height:100%;display:block;touch-action:none;cursor:grab;"></canvas>
-      <div style="position:absolute;left:0;bottom:8px;font-size:10px;letter-spacing:.2em;color:#4d7796;">FIG. 00 — PASSIVE INLAY · LIVE 3D</div>
-      <div style="position:absolute;right:0;top:8px;font-size:10px;letter-spacing:.18em;color:#ffb24d;display:flex;align-items:center;gap:6px;"><i class="ph ph-cube"></i> DRAG TO ROTATE</div>
-      <div style="position:absolute;left:0;top:0;width:14px;height:14px;border-left:1px solid rgba(125,196,240,.4);border-top:1px solid rgba(125,196,240,.4);"></div>
-      <div style="position:absolute;right:0;bottom:8px;width:14px;height:14px;border-right:1px solid rgba(125,196,240,.4);border-bottom:1px solid rgba(125,196,240,.4);"></div>
-    </div>
+    <!-- Corner decorators -->
+    <div style="position:absolute;left:6vw;bottom:8px;z-index:4;font-size:10px;letter-spacing:.2em;color:#4d7796;pointer-events:none;">FIG. 00 — PASSIVE INLAY · LIVE 3D</div>
+    <div style="position:absolute;right:6vw;bottom:8px;z-index:4;font-size:10px;letter-spacing:.18em;color:#ffb24d;pointer-events:none;display:flex;align-items:center;gap:6px;"><i class="ph ph-cube"></i> DRAG TO ROTATE</div>
 
-    <div style="position:absolute;bottom:30px;left:6vw;display:flex;flex-direction:column;gap:10px;font-size:10px;letter-spacing:.24em;color:#7fa9c9;">
+    <!-- Scroll indicator -->
+    <div style="position:absolute;bottom:30px;left:50%;transform:translateX(-50%);z-index:4;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:10px;letter-spacing:.24em;color:#7fa9c9;pointer-events:none;">
       SCROLL
       <span style="width:20px;height:32px;border:1px solid #7fa9c9;border-radius:12px;display:flex;justify-content:center;padding-top:6px;"><span style="width:3px;height:7px;background:#ffb24d;border-radius:2px;animation:scrolldot 1.6s ease-in-out infinite;"></span></span>
     </div>
@@ -439,7 +440,7 @@ const _cleanups = [];
 function initHero(){
   const canvas=document.getElementById('heroCanvas'); if(!canvas) return;
   const scene=new THREE.Scene();
-  const cam=new THREE.PerspectiveCamera(34,1,0.1,100); cam.position.set(0,0.3,7.2);
+  const cam=new THREE.PerspectiveCamera(34,1,0.1,100); cam.position.set(0,0.1,4.2);
   addLights(scene);
   const tag=buildTag(); tag.group.rotation.set(-0.5,0.6,0.08); scene.add(tag.group);
   const r=mkRenderer(canvas); watchSize(r,cam,canvas,_cleanups);
@@ -907,7 +908,7 @@ function initPlan(plan){
       PA.beam.material.opacity=0.07+flashA*0.65;PB.beam.material.opacity=0.07+flashB*0.65;
       cargos.forEach(c=>{if(c.g.visible&&c.ctag)c.ctag.material.emissiveIntensity=0.7+Math.max(flashA,flashB)*1.6;});
     };
-    target.set(0,1.4,1.5);orbitOpts={az:0.7,pol:0.82,r:30,auto:0.0009};
+    target.set(0,1.8,1.5);orbitOpts={az:0.12,pol:0.68,r:44,auto:0.0008};
 
   }else if(plan==='library'){
     setLabel('VERIFIKASI AKSES');
@@ -1318,6 +1319,15 @@ function boot(){
     const lenis=new window.Lenis({duration:1.15,smoothWheel:true,wheelMultiplier:0.9});
     window.__rfidLenis=lenis;
     (function raf(t){lenis.raf(t);requestAnimationFrame(raf);})();
+    // Smooth-scroll for hero anchor links
+    ['heroBedah','heroHow'].forEach(id=>{
+      const el=document.getElementById(id); if(!el) return;
+      el.addEventListener('click',e=>{
+        e.preventDefault();
+        const target=document.querySelector(el.getAttribute('href'));
+        if(target) lenis.scrollTo(target,{duration:1.4,easing:t=>1-Math.pow(1-t,4)});
+      });
+    });
   }
 
   initStepsGrid();

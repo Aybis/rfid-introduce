@@ -1,0 +1,20 @@
+*{box-sizing:border-box;}
+body{margin:0;background:#071423;color:#e8f3fb;font-family:'IBM Plex Mono','Courier New',monospace;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+::selection{background:#ffb24d;color:#071423;}
+a{text-decoration:none;}
+button{font-family:'IBM Plex Mono',monospace;cursor:pointer;}
+
+@keyframes rfpulse{0%{transform:translate(-50%,-50%) scale(.2);opacity:.9}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
+@keyframes scanmove{0%{transform:translateY(-10vh)}100%{transform:translateY(110vh)}}
+@keyframes chipblink{0%,100%{opacity:.35}50%{opacity:1}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes glowdrift{0%,100%{transform:translateX(-50%) translateY(0) scale(1);opacity:.55}50%{transform:translateX(-46%) translateY(34px) scale(1.12);opacity:.8}}
+@keyframes glowdrift2{0%,100%{transform:translate(0,0) scale(1);opacity:.4}50%{transform:translate(36px,-26px) scale(1.16);opacity:.65}}
+@keyframes scrolldot{0%{transform:translateY(0);opacity:0}30%{opacity:1}100%{transform:translateY(11px);opacity:0}}
+@keyframes splashmark{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes modalin{0%{opacity:0;transform:scale(.98)}100%{opacity:1;transform:scale(1)}}
+
+.card-hover{transition:border-color .25s,transform .25s,box-shadow .25s;}
+.card-hover:hover{border-color:#ffb24d!important;transform:translateY(-4px);box-shadow:0 14px 40px rgba(0,0,0,.4);}
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1);}
+.reveal.visible{opacity:1;transform:none;}
