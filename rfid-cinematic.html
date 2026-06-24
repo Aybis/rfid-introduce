@@ -492,28 +492,81 @@ function initWave(){
   _waveTag = tag;
 
   const r=mkRenderer(canvas); watchSize(r,cam,canvas,_cleanups);
+
+  // Phase-label throttle for passive mode
+  let _waveLabelTs = 0;
+
   addScene({canvas,renderer:r,render:(dt,now)=>{
     orbit.apply();
     const t=now*0.001, k=6.2831853/cfg.wl, ws=cfg.speed*2.2;
     const ax=-cfg.dist/2,bx=cfg.dist/2,amp=cfg.amp;
     const isActive=cfg.mode==='active';
     const dr=0.03,dg=0.10,db=0.18,cr=cfg.cr,cg=cfg.cg,cb=cfg.cb;
-    if(face){face.material.emissiveIntensity=isActive?0.18:0.6+Math.sin(t*cfg.speed*3)*0.3;}
-    tag.chip.material.emissiveIntensity=isActive?1.0+Math.sin(t*5)*0.5:0.35+Math.sin(t*4)*0.25;
+
+    // ── PASSIVE macro-cycle (4 s) shows sequential causality ──────────────
+    // 0.00–0.44 → reader emits only          (tag silent, dim)
+    // 0.44–0.58 → wavefront arrives at tag   (tag flash / activation)
+    // 0.58–0.92 → tag backscatters to reader (both waves visible)
+    // 0.92–1.00 → brief fade-out then reset
+    const macroPhase = !isActive ? (t * 0.25) % 1.0 : 0;
+    const tagMix = !isActive ? (
+      macroPhase < 0.44 ? 0 :
+      macroPhase < 0.58 ? (macroPhase - 0.44) / 0.14 :
+      macroPhase < 0.92 ? 1.0 :
+      Math.max(0, 1.0 - (macroPhase - 0.92) / 0.08)
+    ) : 1.0;
+    const cycleFade = (!isActive && macroPhase > 0.94) ? Math.max(0, 1-(macroPhase-0.94)/0.06) : 1.0;
+    // Activation flash peaks right as the wavefront "hits" the tag
+    const activFlash = (!isActive && macroPhase > 0.41 && macroPhase < 0.66) ?
+      Math.sin((macroPhase - 0.41) / 0.25 * Math.PI) : 0;
+
+    // Reader face: bright while emitting, dim in active
+    if(face){ face.material.emissiveIntensity = isActive ? 0.18 : 0.55 + Math.sin(t*cfg.speed*2)*0.28; }
+
+    // Tag chip: dark → bright flash → steady glow in passive; always bright in active
+    tag.chip.material.emissiveIntensity = isActive
+      ? 1.0 + Math.sin(t*5)*0.5
+      : 0.20 + activFlash * 2.6 + tagMix * 0.85;
+
+    // Update phase label (throttled ~300 ms)
+    if(!isActive && now - _waveLabelTs > 300){
+      _waveLabelTs = now;
+      const lbl = document.getElementById('waveTopLabel');
+      if(lbl) lbl.textContent =
+        macroPhase < 0.44 ? '① PASSIVE · Reader memancarkan sinyal ke sekitar' :
+        macroPhase < 0.65 ? '② PASSIVE · Sinyal tiba → tag menerima daya & aktif' :
+                            '③ PASSIVE · Tag backscatter — memantulkan sinyal ke reader';
+    }
+
     for(let i=0;i<vcount;i++){
       const x=px[i],z=pz[i];
       const dA=Math.sqrt((x-ax)*(x-ax)+z*z),dB=Math.sqrt((x-bx)*(x-bx)+z*z);
-      const fA=Math.exp(-dA*0.14),fB=Math.exp(-dB*0.16);
+      const fA=Math.exp(-dA*0.13),fB=Math.exp(-dB*0.15);
       let h;
-      if(!isActive){ h=amp*Math.sin(k*dA-ws*t)*fA+amp*0.6*Math.sin(k*dB-ws*t+k*cfg.dist)*fB; }
-      else { h=amp*Math.sin(k*dA-ws*t)*fA+amp*Math.sin(k*dB-ws*t)*fB; }
+      if(!isActive){
+        // Directional arc waves — reader emits RIGHTWARD arcs, tag emits LEFTWARD arcs
+        // dirA: cos of angle from +X axis (from reader); = 1 toward tag, 0 sideways, cut behind
+        const angleA = Math.atan2(z, x - ax);
+        const dirA   = Math.max(0, Math.cos(angleA));
+        // dirB: cos of angle from -X axis (from tag); = 1 toward reader, 0 sideways, cut behind
+        const angleB = Math.atan2(z, bx - x);
+        const dirB   = Math.max(0, Math.cos(angleB));
+
+        // ① Reader arcs fan out rightward
+        const readerWave = amp * Math.sin(k*dA - ws*t) * fA * dirA;
+        // ③ Tag arcs fan out leftward (appear after wavefront hits tag)
+        const tagWave    = amp * 0.65 * Math.sin(k*dB - ws*t + k*cfg.dist) * fB * dirB;
+        h = (readerWave + tagWave * tagMix) * cycleFade;
+      } else {
+        // ACTIVE: both emit omnidirectionally & simultaneously (tag has its own battery)
+        h = amp*Math.sin(k*dA-ws*t)*fA + amp*Math.sin(k*dB-ws*t)*fB;
+      }
       pos.setY(i,h);
       let n=h/amp*0.5+0.5; n=n<0?0:(n>1?1:n);
       col.setXYZ(i,dr+(cr-dr)*n,dg+(cg-dg)*n,db+(cb-db)*n);
     }
     pos.needsUpdate=true; col.needsUpdate=true;
     reader.position.x=ax; tag.group.position.x=bx;
-    tag.chip.material.emissiveIntensity=0.5+Math.sin(now*0.006)*0.4;
     tag.group.rotation.z=Math.sin(now*0.0009)*0.12;
     r.render(scene,cam);
   }});
@@ -538,40 +591,59 @@ function initTeardown(){
     {node:tag.casing,mats:[tag.casing.material]},
   ];
   parts.forEach(P=>P.mats.forEach(m=>{if(m){m.transparent=true;if(m.opacity==null)m.opacity=1;}}));
-  const GAP=1.5;
-  const topZ=i=>(3-i)*GAP;
-  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-  const stepEls=[0,1,2,3].map(i=>document.querySelector('[data-step="'+i+'"]'));
-  const dotEls=[0,1,2,3].map(i=>document.querySelector('[data-dot="'+i+'"]'));
-  const r=mkRenderer(canvas); watchSize(r,cam,canvas,_cleanups);
-  let lastActive=-1,prog=0;
+  // GAP reduced: layers stay compact, world Y = localZ * 1.45 (group scale)
+  const GAP   = 0.88;      // was 1.5 — max spread now ~3.8 world-Y units vs ~6.5
+  const GSCALE = 1.45;     // group.scale — converts local-Z to world-Y
+  const topZ  = i => (3 - i) * GAP;
+  const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+  const stepEls = [0,1,2,3].map(i=>document.querySelector('[data-step="'+i+'"]'));
+  const dotEls  = [0,1,2,3].map(i=>document.querySelector('[data-dot="'+i+'"]'));
+  const r = mkRenderer(canvas); watchSize(r,cam,canvas,_cleanups);
+  // camAimY: smoothly tracks active layer's world-Y so camera never jumps
+  let lastActive = -1, prog = 0, camAimY = GAP * 1.5 * GSCALE;
   addScene({canvas,renderer:r,render:(dt,now)=>{
-    const total=(section.offsetHeight-window.innerHeight)||1;
-    const p=clamp(-section.getBoundingClientRect().top/total,0,1);
-    prog+=(p-prog)*0.10;
-    const sp=clamp(prog/0.14,0,1);
-    const active=clamp(Math.round(prog*3),0,3);
-    parts.forEach((P,i)=>{
-      const isA=i===active;
-      const tz=topZ(i)*sp+(isA?0.35:0);
-      P.node.position.z+=(tz-P.node.position.z)*0.14;
-      const tOp=(sp<0.5)?1:(isA?(i===3?0.5:1):0.16);
-      P.mats.forEach(m=>{if(m) m.opacity+=(tOp-m.opacity)*0.14;});
+    const total = (section.offsetHeight - window.innerHeight) || 1;
+    const p = clamp(-section.getBoundingClientRect().top / total, 0, 1);
+    prog += (p - prog) * 0.07;                   // smoother scroll tracking
+    const sp     = clamp(prog / 0.14, 0, 1);     // 0→1: assemble→explode over first 14%
+    const active = clamp(Math.round(prog * 3), 0, 3);
+
+    // Move each plate to its target local-Z; opacity dims non-active layers
+    parts.forEach((P, i) => {
+      const isA = i === active;
+      const tz  = topZ(i) * sp + (isA ? 0.28 : 0);   // active layer nudges up slightly
+      P.node.position.z += (tz - P.node.position.z) * 0.09;   // smooth position
+      const tOp = (sp < 0.45) ? 1 : (isA ? (i === 3 ? 0.52 : 1) : 0.14);
+      P.mats.forEach(m => { if(m) m.opacity += (tOp - m.opacity) * 0.09; });
     });
-    tag.chip.material.emissiveIntensity=(active===2?1.2:0.4)+Math.sin(now*0.005)*0.25;
-    goldMat&&(goldMat.emissiveIntensity=(active===1?0.75:0.25));
-    const panP=clamp((prog-0.14)/0.86,0,1);
-    const aimY=(panP<0.02)?(1.5*GAP*sp):(topZ(0)+(topZ(3)-topZ(0))*panP)*panP+topZ(active)*(1-panP);
-    const dist=8.4-sp*3.3;
-    cam.position.set(dist*0.42,aimY+dist*0.46,dist*0.92);
-    cam.lookAt(0,aimY,0);
-    tag.group.rotation.z+=0.0009;
-    if(active!==lastActive){
-      lastActive=active;
-      stepEls.forEach((el,i)=>{if(el){el.style.transition='opacity .45s,transform .45s';el.style.opacity=i===active?'1':'0';el.style.transform=i===active?'none':'translateY(18px)';}});
-      dotEls.forEach((el,i)=>{if(el) el.style.background=i===active?'#ffb24d':'rgba(125,196,240,.25)';});
+
+    tag.chip.material.emissiveIntensity = (active===2 ? 1.1 : 0.35) + Math.sin(now*0.005)*0.22;
+    goldMat && (goldMat.emissiveIntensity = active===1 ? 0.72 : 0.22);
+
+    // Camera: world-Y of active plate = its current local-Z * group scale
+    const activeWorldY = parts[active].node.position.z * GSCALE;
+    camAimY += (activeWorldY - camAimY) * 0.045;   // smooth camera follow — no jumps
+
+    const dist = 7.8 - sp * 2.6;   // zoom in modestly: 7.8 → 5.2
+    cam.position.set(dist * 0.40, camAimY + dist * 0.52, dist * 0.88);
+    cam.lookAt(0, camAimY, 0);
+
+    tag.group.rotation.z += 0.0008;   // gentle auto-spin
+
+    if(active !== lastActive){
+      lastActive = active;
+      stepEls.forEach((el,i) => {
+        if(el){
+          el.style.transition = 'opacity .55s ease, transform .55s ease';
+          el.style.opacity    = i === active ? '1' : '0';
+          el.style.transform  = i === active ? 'none' : 'translateY(14px)';
+        }
+      });
+      dotEls.forEach((el,i) => {
+        if(el) el.style.background = i === active ? '#ffb24d' : 'rgba(125,196,240,.25)';
+      });
     }
-    r.render(scene,cam);
+    r.render(scene, cam);
   }});
 }
 
@@ -958,7 +1030,7 @@ function setWaveMode(m){
   state.waveMode=m;
   _waveCfg.mode=m;
   document.getElementById('waveTopLabel').textContent=
-    m==='passive'?'PASSIVE · Reader memancarkan → Tag backscatter':'ACTIVE · Tag memancarkan sendiri (bertenaga baterai)';
+    m==='passive'?'① PASSIVE · Reader memancarkan sinyal ke sekitar':'ACTIVE · Tag memancarkan sendiri (bertenaga baterai)';
   renderModeTabs();
 }
 
