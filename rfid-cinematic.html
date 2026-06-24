@@ -761,78 +761,160 @@ function initPlan(plan){
   }else if(plan==='toll'){
     setLabel('KENDARAAN LEWAT');
     const LANES=[-3.0,0,3.0];
+    // Road
     const road=new THREE.Mesh(new THREE.PlaneGeometry(44,11),new THREE.MeshStandardMaterial({color:0x101a26,roughness:.95}));
     road.rotation.x=-Math.PI/2;road.position.y=0.02;scene.add(road);
     [-1.5,1.5].forEach(z=>{for(let i=-10;i<=10;i++){const ln=new THREE.Mesh(new THREE.BoxGeometry(1.0,0.02,0.16),new THREE.MeshBasicMaterial({color:0xffd9a0}));ln.position.set(i*2.1,0.04,z);scene.add(ln);}});
+    // Overhead gantry (RFID reader beam)
     const gantryBar=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,11),shelfMat);gantryBar.position.set(0,5.2,0);scene.add(gantryBar);
     [-5,5].forEach(z=>{const post=new THREE.Mesh(new THREE.BoxGeometry(0.5,5.2,0.5),shelfMat);post.position.set(0,2.6,z);scene.add(post);});
+    const BARRIER_X=-1.2;
     const lanes=LANES.map((lz,li)=>{
+      // RFID reader on gantry
       const reader=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.5,1.0),new THREE.MeshStandardMaterial({color:0x7fc4f0,emissive:0x3a7fb5,emissiveIntensity:.5}));reader.position.set(0,5.0,lz);scene.add(reader);
-      const booth=new THREE.Mesh(new THREE.BoxGeometry(1.0,1.8,1.0),boxMat(0x223149));booth.position.set(0,0.9,lz-1.4);scene.add(booth);
-      const pivot=new THREE.Group();pivot.position.set(0.2,1.0,lz-0.9);scene.add(pivot);
-      const arm=new THREE.Mesh(new THREE.BoxGeometry(2.6,0.14,0.14),new THREE.MeshStandardMaterial({color:0xffb24d,emissive:0xffb24d,emissiveIntensity:.3}));arm.position.x=1.3;pivot.add(arm);
-      for(let s=0;s<3;s++){const st=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.14,0.16),boxMat(0x9a3b2e));st.position.set(0.5+s*0.8,0,0.001);pivot.add(st);}
+      // Barrier post beside lane
+      const bpost=new THREE.Mesh(new THREE.BoxGeometry(0.28,2.6,0.28),boxMat(0x1e3048));bpost.position.set(BARRIER_X,1.3,lz+1.46);scene.add(bpost);
+      // Housing box at top of post
+      const bhouse=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.5,0.55),boxMat(0x172638));bhouse.position.set(BARRIER_X,1.8,lz+1.46);scene.add(bhouse);
+      // Status light (red=closed, green=open)
+      const statusLight=new THREE.Mesh(new THREE.SphereGeometry(0.12,10,10),new THREE.MeshBasicMaterial({color:0xff4040}));statusLight.position.set(BARRIER_X-0.3,1.9,lz+1.46);scene.add(statusLight);
+      // Pivot group — arm opens by rotating +X axis (arm rises upward)
+      const pivot=new THREE.Group();pivot.position.set(BARRIER_X,1.55,lz+1.46);scene.add(pivot);
+      // Arm extends ACROSS the lane in -Z direction to block traffic
+      const armLen=3.0;
+      const armMat=new THREE.MeshStandardMaterial({color:0xe83030,emissive:0xaa1010,emissiveIntensity:.25,roughness:.5});
+      const armMesh=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.13,armLen),armMat);armMesh.position.z=-(armLen/2);pivot.add(armMesh);
+      // White reflective stripes
+      for(let s=0;s<5;s++){const stripe=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.15,0.24),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.35}));stripe.position.z=-(0.45+s*0.58);pivot.add(stripe);}
+      // Counterweight on opposite side
+      const cwt=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.22,0.55),boxMat(0x1e3048));cwt.position.z=0.42;pivot.add(cwt);
+      // Car
       const car=makeCar([0x9a3b2e,0x2f6da0,0x4a7a4a][li]);car.position.set(-15-li*4,0,lz);scene.add(car);
-      return{reader,pivot,car,lz,armT:0,prevX:-15};
+      return{reader,pivot,armMat,car,statusLight,lz,armAngle:0,targetAngle:0,prevX:-15};
     });
     let beamFlash=0;
     update=(dt,now)=>{
       lanes.forEach((L,li)=>{
         L.prevX=L.car.position.x;
-        const nearGate=L.car.position.x>-2.2&&L.car.position.x<1.0;
-        const speed=(nearGate&&L.armT<0.4)?1.3:4.6;
+        const isOpen=L.armAngle>0.8;
+        const nearGate=L.car.position.x>-4.0&&L.car.position.x<0.8;
+        const speed=(nearGate&&!isOpen)?1.4:4.8;
         L.car.position.x+=dt*speed;
-        if(L.car.position.x>16){L.car.position.x=-15-((li*3)%6);L.armT=0;}
-        if(L.prevX<-0.2&&L.car.position.x>=-0.2){_readCount++;setCount();L.armT=1;beamFlash=1;logEvent('Lajur '+(li+1)+' · kend. #'+_readCount,'#a9d4ff');}
-        L.armT=Math.max(0,L.armT-dt*0.45);
-        L.pivot.rotation.z=(L.armT>0?Math.PI/2.2:0);
-        L.reader.material.emissiveIntensity=0.5+(L.armT>0.6?1.0:0);
-        L.car.userData.tag.material.emissiveIntensity=0.6+(L.armT>0.6?1.2:0);
+        if(L.car.position.x>16){L.car.position.x=-15-((li*3)%6);L.targetAngle=0;}
+        // Tag detected → open barrier smoothly
+        if(L.prevX<BARRIER_X-0.6&&L.car.position.x>=BARRIER_X-0.6){
+          _readCount++;setCount();L.targetAngle=Math.PI/2;beamFlash=1;
+          logEvent('Lajur '+(li+1)+' · kend. #'+_readCount,'#a9d4ff');
+        }
+        // Car clears barrier → begin closing smoothly
+        if(L.car.position.x>1.4&&L.targetAngle>0.1){L.targetAngle=0;}
+        // Smooth open/close interpolation
+        L.armAngle+=(L.targetAngle-L.armAngle)*Math.min(1,dt*3.2);
+        L.pivot.rotation.x=L.armAngle;
+        const pct=L.armAngle/(Math.PI/2);
+        L.statusLight.material.color.setHex(pct>0.5?0x39d98a:0xff4040);
+        L.reader.material.emissiveIntensity=0.5+(pct>0.5?1.2:0);
+        L.car.userData.tag.material.emissiveIntensity=0.6+(beamFlash>0.5&&pct>0.3?1.4:0);
       });
-      beamFlash=Math.max(0,beamFlash-dt*2);
+      beamFlash=Math.max(0,beamFlash-dt*2.5);
     };
     target.set(0,1.8,0);orbitOpts={az:0.66,pol:0.84,r:21,auto:0.0009};
 
   }else if(plan==='logistics'){
-    setLabel('PALET DILACAK');
-    const warehouse=(x,col)=>{
+    setLabel('OUTBOUND LOGISTICS');
+    // ─── Warehouses ───
+    const makeWarehouse=(x,roofCol)=>{
       const g=new THREE.Group();
-      const back=new THREE.Mesh(new THREE.BoxGeometry(5,3.4,0.2),boxMat(0x1a2940));back.position.set(0,1.7,-2.4);g.add(back);
-      const roof=new THREE.Mesh(new THREE.BoxGeometry(5.2,0.2,5),boxMat(col));roof.position.set(0,3.5,0);g.add(roof);
-      [-2.4,2.4].forEach(z=>{const wall=new THREE.Mesh(new THREE.BoxGeometry(0.2,3.4,5),boxMat(0x1a2940));wall.position.set((z>0?2.4:-2.4),1.7,0);g.add(wall);});
-      for(let s=0;s<2;s++){const sh=new THREE.Mesh(new THREE.BoxGeometry(4,0.14,1.6),shelfMat);sh.position.set(0,0.7+s*1.2,-1.4);g.add(sh);
-        for(let i=-1;i<=1;i++){const b=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.7,1.0),boxMat([0x4a3a2a,0x274a3a,0x3a3a5a][(i+1)%3]));b.position.set(i*1.2,0.8+s*1.2,-1.4);g.add(b);}}
+      const back=new THREE.Mesh(new THREE.BoxGeometry(6,4.2,0.2),boxMat(0x1a2940));back.position.set(0,2.1,-3.0);g.add(back);
+      const roof=new THREE.Mesh(new THREE.BoxGeometry(6.4,0.22,6.2),boxMat(roofCol));roof.position.set(0,4.3,0);g.add(roof);
+      [-3,3].forEach(zw=>{const w=new THREE.Mesh(new THREE.BoxGeometry(0.2,4.2,6.2),boxMat(0x1a2940));w.position.set(zw>0?3:-3,2.1,0);g.add(w);});
+      for(let s=0;s<3;s++){const sh=new THREE.Mesh(new THREE.BoxGeometry(5,0.13,1.5),shelfMat);sh.position.set(0,0.8+s*1.15,-2.2);g.add(sh);
+        for(let i=-1;i<=1;i++){const b=new THREE.Mesh(new THREE.BoxGeometry(1.0,0.85,1.1),boxMat([0x4a3a2a,0x274a3a,0x3a3a5a][(i+1)%3]));b.position.set(i*1.4,0.8+s*1.15+0.48,-2.2);g.add(b);}}
       g.position.set(x,0,0);scene.add(g);
     };
-    warehouse(-12,0x2f6da0);warehouse(12,0x4a7a4a);
-    const road=new THREE.Mesh(new THREE.PlaneGeometry(20,3.4),new THREE.MeshStandardMaterial({color:0x101a26,roughness:.95}));road.rotation.x=-Math.PI/2;road.position.set(0,0.02,3);scene.add(road);
-    for(let i=-4;i<=4;i++){const ln=new THREE.Mesh(new THREE.BoxGeometry(1,0.02,0.16),new THREE.MeshBasicMaterial({color:0xffd9a0}));ln.position.set(i*2.2,0.04,3);scene.add(ln);}
-    const PA=portal(-1.3,1.3,3.0,0xffb24d);PA.grp.position.set(-12,0,1.4);
-    const PB=portal(-1.3,1.3,3.0,0xffb24d);PB.grp.position.set(12,0,1.4);
+    makeWarehouse(-12,0x2f6da0);makeWarehouse(12,0x4a7a4a);
+    // ─── Road ───
+    const road=new THREE.Mesh(new THREE.PlaneGeometry(20,3.6),new THREE.MeshStandardMaterial({color:0x101a26,roughness:.95}));road.rotation.x=-Math.PI/2;road.position.set(0,0.02,3.2);scene.add(road);
+    for(let i=-4;i<=4;i++){const ln=new THREE.Mesh(new THREE.BoxGeometry(1.1,0.02,0.16),new THREE.MeshBasicMaterial({color:0xffd9a0}));ln.position.set(i*2.3,0.04,3.2);scene.add(ln);}
+    // ─── RFID portals at warehouse exits ───
+    const PA=portal(-1.4,1.4,3.2,0xffb24d);PA.grp.position.set(-12,0,1.5);
+    const PB=portal(-1.4,1.4,3.2,0xffb24d);PB.grp.position.set(12,0,1.5);
+    // ─── Truck ───
     const truck=new THREE.Group();
-    const trailer=new THREE.Mesh(new THREE.BoxGeometry(3.4,2.2,2.0),boxMat(0x2f4a63));trailer.position.set(0,1.4,0);truck.add(trailer);
-    const tcab=new THREE.Mesh(new THREE.BoxGeometry(1.2,1.6,1.9),boxMat(0x9a3b2e));tcab.position.set(2.2,1.0,0);truck.add(tcab);
-    [[-1.0],[1.0],[2.2]].forEach(p=>{const w=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.4,0.3,14),new THREE.MeshStandardMaterial({color:0x0a0a0a}));w.rotation.x=Math.PI/2;w.position.set(p[0],0.4,1.0);truck.add(w);const w2=w.clone();w2.position.z=-1.0;truck.add(w2);});
-    const cargo=new THREE.Mesh(new THREE.BoxGeometry(1.4,1.2,1.4),boxMat(0x5a4a2a));cargo.position.set(-0.4,1.4,0);truck.add(cargo);
-    const cdot=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.14,0.02),tagMat());cdot.position.set(-0.4,1.5,1.01);truck.add(cdot);
-    truck.position.set(-12,0,3);scene.add(truck);
-    let stage=0,t2=0,flashA=0,flashB=0;
+    const trailer=new THREE.Mesh(new THREE.BoxGeometry(4.2,2.5,2.2),boxMat(0x2f4a63));trailer.position.set(-0.9,1.55,0);truck.add(trailer);
+    const tcab=new THREE.Mesh(new THREE.BoxGeometry(1.5,1.9,2.1),boxMat(0x9a3b2e));tcab.position.set(2.3,1.15,0);truck.add(tcab);
+    const twind=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.65,1.5),new THREE.MeshStandardMaterial({color:0x0a1622,metalness:.6,roughness:.2}));twind.position.set(1.52,1.7,0);truck.add(twind);
+    [[-1.8,1.1],[0.0,1.1],[2.0,1.1]].forEach(p=>{
+      const w=new THREE.Mesh(new THREE.CylinderGeometry(0.44,0.44,0.34,14),new THREE.MeshStandardMaterial({color:0x0a0a0a}));w.rotation.x=Math.PI/2;w.position.set(p[0],0.44,1.12);truck.add(w);
+      const w2=w.clone();w2.position.z=-1.12;truck.add(w2);
+    });
+    // ─── 3 cargo pallets (hidden initially) ───
+    const PALLET_COLS=[0x5a3a1a,0x2a4a2a,0x2a3a5a];
+    const cargos=PALLET_COLS.map((col,i)=>{
+      const g=new THREE.Group();g.position.set(-2.4+i*0.9,0,0);truck.add(g);
+      const box=new THREE.Mesh(new THREE.BoxGeometry(0.82,0.9,1.1),boxMat(col));box.position.y=2.07;g.add(box);
+      const pallet=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.18,1.18),boxMat(0x8a6a3a));pallet.position.y=1.65;g.add(pallet);
+      const ctag=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.12,0.02),tagMat());ctag.position.set(0,2.1,0.56);g.add(ctag);
+      g.visible=false;g.scale.set(1,0,1);
+      return{g,ctag,prog:0,loadLogged:false,unloadLogged:false};
+    });
+    truck.position.set(-12,0,3.2);scene.add(truck);
+    // ─── Workers ───
+    const wkA=makeHuman(0xffb24d,0x223149);wkA.position.set(-11.2,0,1.8);wkA.rotation.y=-Math.PI/4;scene.add(wkA);
+    const wkB=makeHuman(0x7fc4f0,0x223149);wkB.position.set(11.2,0,1.8);wkB.rotation.y=Math.PI+Math.PI/4;scene.add(wkB);
+    let stage=0,stageT=0,flashA=0,flashB=0;
+    const nextStage=(s)=>{stage=s;stageT=0;};
     update=(dt,now)=>{
-      t2+=dt;
-      if(stage===0){truck.position.x=-12;if(t2>1.2){_readCount++;setCount();logEvent('Palet #'+_readCount+' keluar · Gudang A','#ffcf8f');flashA=1;stage=1;t2=0;}}
-      else if(stage===1){truck.position.x+=dt*5.5;if(truck.position.x>=12){truck.position.x=12;stage=2;t2=0;}}
-      else if(stage===2){if(t2>1.0){_readCount++;setCount();logEvent('Palet #'+_readCount+' masuk · Gudang B','#7fc4f0');flashB=1;stage=3;t2=0;}}
-      else{truck.position.x-=dt*8.5;if(truck.position.x<=-12){truck.position.x=-12;stage=0;t2=0;}}
+      stageT+=dt;
+      const sw=Math.sin(now*0.011)*0.45;
+      // Stage 0: LOADING at Warehouse A — pallets rise into place one by one
+      if(stage===0){
+        wkA.userData.legL.rotation.x=sw;wkA.userData.legR.rotation.x=-sw;
+        let allLoaded=true;
+        cargos.forEach((c,i)=>{
+          if(stageT>=0.7*(i+1)){c.g.visible=true;c.prog=Math.min(1,c.prog+dt*2.4);c.g.scale.set(1,c.prog,1);}
+          if(c.prog<0.99)allLoaded=false;
+          if(c.prog>=0.99&&!c.loadLogged){c.loadLogged=true;flashA=1;_readCount++;setCount();logEvent('Palet #'+(i+1)+' RFID terbaca · Gudang A','#ffcf8f');}
+        });
+        if(allLoaded&&stageT>3.5){logEvent('Semua palet dimuat — truk berangkat','#7fc4f0');nextStage(1);}
+      }
+      // Stage 1: TRANSIT A→B
+      else if(stage===1){
+        wkA.userData.legL.rotation.x=0;wkA.userData.legR.rotation.x=0;
+        truck.rotation.y=0;truck.position.x+=dt*6.0;
+        if(truck.position.x>=12){truck.position.x=12;logEvent('Tiba di Gudang Agen','#7fc4f0');nextStage(2);}
+      }
+      // Stage 2: UNLOADING at Warehouse B — pallets lower away one by one
+      else if(stage===2){
+        wkB.userData.legL.rotation.x=sw;wkB.userData.legR.rotation.x=-sw;
+        let allUnloaded=true;
+        cargos.forEach((c,i)=>{
+          if(stageT>=0.6*(i+1)){c.prog=Math.max(0,c.prog-dt*2.2);c.g.scale.set(1,c.prog,1);if(c.prog<=0)c.g.visible=false;}
+          if(c.prog>0.01)allUnloaded=false;
+          if(c.prog<=0.01&&!c.unloadLogged&&c.loadLogged){c.unloadLogged=true;flashB=1;_readCount++;setCount();logEvent('Palet #'+(i+1)+' diturunkan · Gudang Agen','#a9d4ff');}
+        });
+        if(allUnloaded&&stageT>3.2){logEvent('Pengiriman selesai — truk kembali','#9cc2dd');nextStage(3);}
+      }
+      // Stage 3: RETURN EMPTY
+      else{
+        wkB.userData.legL.rotation.x=0;wkB.userData.legR.rotation.x=0;
+        truck.rotation.y=Math.PI;truck.position.x-=dt*8.5;
+        if(truck.position.x<=-12){truck.position.x=-12;truck.rotation.y=0;
+          cargos.forEach(c=>{c.g.visible=false;c.g.scale.set(1,0,1);c.prog=0;c.loadLogged=false;c.unloadLogged=false;});
+          _readCount=0;setCount();const lg=document.getElementById('readLog');if(lg)lg.innerHTML='';nextStage(0);}
+      }
       flashA=Math.max(0,flashA-dt*2);flashB=Math.max(0,flashB-dt*2);
-      PA.beam.material.opacity=0.07+flashA*0.6;PB.beam.material.opacity=0.07+flashB*0.6;
-      cdot.material.emissiveIntensity=0.6+Math.max(flashA,flashB)*1.4;
+      PA.beam.material.opacity=0.07+flashA*0.65;PB.beam.material.opacity=0.07+flashB*0.65;
+      cargos.forEach(c=>{if(c.g.visible&&c.ctag)c.ctag.material.emissiveIntensity=0.7+Math.max(flashA,flashB)*1.6;});
     };
-    target.set(0,1.4,1.5);orbitOpts={az:0.7,pol:0.82,r:24,auto:0.0009};
+    target.set(0,1.4,1.5);orbitOpts={az:0.7,pol:0.82,r:30,auto:0.0009};
 
   }else if(plan==='library'){
-    setLabel('BUKU DIPINJAM');
+    setLabel('VERIFIKASI AKSES');
     const bookCols=[0x9a3b2e,0x2f6da0,0x4a7a4a,0xc9923a,0x6a4a8a,0xbb5547,0x3a6a8a];
+    // Wood floor
     const woodFloor=new THREE.Mesh(new THREE.PlaneGeometry(20,12),new THREE.MeshStandardMaterial({color:0x2a1f14,roughness:.9}));woodFloor.rotation.x=-Math.PI/2;woodFloor.position.set(0,0.015,-1);scene.add(woodFloor);
+    // Shelves
     const shelfWall=(z,face)=>{
       const g=new THREE.Group();
       const bk=new THREE.Mesh(new THREE.BoxGeometry(16,4.6,0.4),boxMat(0x3a2a1e));bk.position.set(0,2.3,0);g.add(bk);
@@ -841,31 +923,102 @@ function initPlan(plan){
       g.position.set(0,0,z);scene.add(g);
     };
     shelfWall(-4.6,1);shelfWall(4.6,-1);
+    // Tables with sitting readers
     const tableF=(x)=>{
       const top=new THREE.Mesh(new THREE.BoxGeometry(2.4,0.12,1.3),boxMat(0x5a4330));top.position.set(x,0.85,-1);scene.add(top);
       [[-1.0,-0.5],[1.0,-0.5],[-1.0,0.5],[1.0,0.5]].forEach(p=>{const leg=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.85,0.12),boxMat(0x3a2a1e));leg.position.set(x+p[0],0.42,-1+p[1]);scene.add(leg);});
       for(let i=0;i<3;i++){const b=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.1,0.36),boxMat(bookCols[(i+x)%bookCols.length]));b.position.set(x-0.6+i*0.6,0.96,-1.2);scene.add(b);}
-      const rdr=makeHuman(0x4a7a4a,0x223149);rdr.position.set(x,0,0.1);rdr.userData.legL.rotation.x=-1.4;rdr.userData.legR.rotation.x=-1.4;rdr.position.y=-0.35;scene.add(rdr);
+      const sitter=makeHuman(0x4a7a4a,0x223149);sitter.position.set(x,-0.35,0.1);sitter.userData.legL.rotation.x=-1.4;sitter.userData.legR.rotation.x=-1.4;scene.add(sitter);
     };
     tableF(-4.5);tableF(0.2);
-    const P=portal(-2.2,2.2,2.8,0xffb24d);P.grp.position.set(0,0,4.5);
-    [-2.2,2.2].forEach(z=>{const ped=new THREE.Mesh(new THREE.BoxGeometry(0.5,1.5,0.5),new THREE.MeshStandardMaterial({color:0x12283f,metalness:.4,roughness:.5}));ped.position.set(0,0.75,z+4.5);scene.add(ped);});
+    // ─── Gate — NEUTRAL COLOR at start ───
+    const COL_NEUTRAL=0x1e3048,COL_GREEN=0x163a22,COL_RED=0x3a1616;
+    const LT_NEUTRAL=0x7fc4f0,LT_GREEN=0x39d98a,LT_RED=0xff5a5a;
+    const gateGrp=new THREE.Group();gateGrp.position.set(0,0,4.5);
+    const pedMatL=new THREE.MeshStandardMaterial({color:COL_NEUTRAL,roughness:.6,metalness:.35});
+    const pedMatR=new THREE.MeshStandardMaterial({color:COL_NEUTRAL,roughness:.6,metalness:.35});
+    const pedL=new THREE.Mesh(new THREE.BoxGeometry(0.45,2.9,0.45),pedMatL);pedL.position.set(0,1.45,-2.2);gateGrp.add(pedL);
+    const pedR=new THREE.Mesh(new THREE.BoxGeometry(0.45,2.9,0.45),pedMatR);pedR.position.set(0,1.45,2.2);gateGrp.add(pedR);
+    const topBar=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.2,4.6),shelfMat);topBar.position.set(0,2.95,0);gateGrp.add(topBar);
+    // Status lights on top of each pedestal
+    const ltMatL=new THREE.MeshBasicMaterial({color:LT_NEUTRAL});const ltL=new THREE.Mesh(new THREE.SphereGeometry(0.16,10,10),ltMatL);ltL.position.set(0,3.22,-2.2);gateGrp.add(ltL);
+    const ltMatR=new THREE.MeshBasicMaterial({color:LT_NEUTRAL});const ltR=new THREE.Mesh(new THREE.SphereGeometry(0.16,10,10),ltMatR);ltR.position.set(0,3.22,2.2);gateGrp.add(ltR);
+    // Reader panels
+    const rdrMat=new THREE.MeshStandardMaterial({color:0x7fc4f0,emissive:0x3a7fb5,emissiveIntensity:.5});
+    const rdrPanel=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.7,0.13),rdrMat);rdrPanel.position.set(0.26,1.35,-2.2);gateGrp.add(rdrPanel);
+    // Beam plane (changes color on validation)
+    const beamMat=new THREE.MeshBasicMaterial({color:0x7fc4f0,transparent:true,opacity:0.04,side:THREE.DoubleSide});
+    const beam=new THREE.Mesh(new THREE.PlaneGeometry(4.4,2.8),beamMat);beam.rotation.y=Math.PI/2;beam.position.set(0,1.5,0);gateGrp.add(beam);
+    scene.add(gateGrp);
+    // ─── DOM alert overlay ───
+    const alertDiv=document.createElement('div');
+    alertDiv.style.cssText='position:absolute;top:48%;left:50%;transform:translate(-50%,-50%);background:rgba(160,20,20,0.96);color:#fff;padding:14px 26px;border-radius:4px;font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:600;letter-spacing:.06em;pointer-events:none;opacity:0;transition:opacity .25s;z-index:20;border:1px solid rgba(255,90,90,.6);white-space:nowrap;';
+    alertDiv.textContent='⛔  Anda tidak memiliki akses';
+    canvas.parentElement.appendChild(alertDiv);
+    _planCleanups.push(()=>{try{alertDiv.remove();}catch(e){}});
+    // ─── Patron ───
     const patron=makeHuman(0xc9923a,0x223149);scene.add(patron);
     const carried=new THREE.Group();
     for(let i=0;i<3;i++){const b=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.16,0.5),boxMat(bookCols[i+1]));b.position.y=i*0.18;carried.add(b);}
     const cd=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.1,0.02),tagMat());cd.position.set(0,0.18,0.26);carried.add(cd);
     carried.position.set(0,1.05,0.35);patron.add(carried);
-    const titles=['Atlas Dunia','Sejarah Nusantara','Fisika Dasar','Novel Senja','Ensiklopedia','Kamus Besar','Biologi Sel','Puisi Pagi'];
-    let prevZ2=-3,flash2=0;patron.position.z=-3;
+    const titles=['Atlas Dunia','Sejarah Nusantara','Fisika Dasar','Novel Senja','Ensiklopedia','Kamus Besar','Biologi Sel'];
+    let isValid=true,pState='walk',pTimer=0,pFlash=0,alertTimer=0,bookIdx=0;
+    patron.position.set(0,0,-3);
+    const resetGate=()=>{
+      pedMatL.color.setHex(COL_NEUTRAL);pedMatR.color.setHex(COL_NEUTRAL);
+      ltMatL.color.setHex(LT_NEUTRAL);ltMatR.color.setHex(LT_NEUTRAL);
+      beamMat.color.setHex(0x7fc4f0);beamMat.opacity=0.04;rdrMat.emissiveIntensity=0.5;
+    };
     update=(dt,now)=>{
-      prevZ2=patron.position.z;
-      patron.position.z+=dt*2.4;patron.rotation.y=Math.PI;
-      const sw=Math.sin(now*0.012)*0.5;patron.userData.legL.rotation.x=sw;patron.userData.legR.rotation.x=-sw;
-      if(patron.position.z>9)patron.position.z=-3;
-      if(prevZ2<4.5&&patron.position.z>=4.5){_readCount++;setCount();flash2=1;logEvent('"'+titles[(_readCount-1)%titles.length]+'"','#7fc4f0');}
-      flash2=Math.max(0,flash2-dt*2.2);
-      P.beam.material.opacity=0.07+flash2*0.5;
-      cd.material.emissiveIntensity=0.6+flash2*1.4+Math.sin(now*0.01)*0.2;
+      const sw=Math.sin(now*0.012)*0.5;
+      alertTimer=Math.max(0,alertTimer-dt);
+      alertDiv.style.opacity=alertTimer>0.4?'1':String(Math.max(0,(alertTimer/0.4)).toFixed(2));
+      if(pState==='walk'){
+        patron.position.z+=dt*2.3;patron.rotation.y=Math.PI;
+        patron.userData.legL.rotation.x=sw;patron.userData.legR.rotation.x=-sw;
+        if(patron.position.z>=3.6){pState='scan';pTimer=0;pFlash=0;}
+      }
+      else if(pState==='scan'){
+        pTimer+=dt;pFlash=Math.min(1,pTimer*3.5);
+        beamMat.opacity=0.05+pFlash*0.55;rdrMat.emissiveIntensity=0.5+pFlash;
+        cd.material.emissiveIntensity=0.7+pFlash*1.5;
+        patron.userData.legL.rotation.x=0;patron.userData.legR.rotation.x=0;
+        if(pTimer>0.55){
+          _readCount++;setCount();
+          if(isValid){
+            pedMatL.color.setHex(COL_GREEN);pedMatR.color.setHex(COL_GREEN);
+            ltMatL.color.setHex(LT_GREEN);ltMatR.color.setHex(LT_GREEN);
+            beamMat.color.setHex(0x39d98a);
+            logEvent('"'+titles[bookIdx%titles.length]+'" — diizinkan','#39d98a');
+            bookIdx++;pState='pass';
+          }else{
+            pedMatL.color.setHex(COL_RED);pedMatR.color.setHex(COL_RED);
+            ltMatL.color.setHex(LT_RED);ltMatR.color.setHex(LT_RED);
+            beamMat.color.setHex(0xff5a5a);
+            logEvent('AKSES DITOLAK — badge tidak valid','#ff5a5a');
+            alertDiv.style.opacity='1';alertTimer=2.8;pState='reject';
+          }
+          pTimer=0;
+        }
+      }
+      else if(pState==='pass'){
+        patron.position.z+=dt*2.0;patron.rotation.y=Math.PI;
+        patron.userData.legL.rotation.x=sw;patron.userData.legR.rotation.x=-sw;
+        if(patron.position.z>9){pTimer=0;pState='reset';}
+      }
+      else if(pState==='reject'){
+        pTimer+=dt;
+        if(pTimer>1.0){patron.position.z-=dt*2.2;patron.rotation.y=0;patron.userData.legL.rotation.x=-sw;patron.userData.legR.rotation.x=sw;}
+        if(patron.position.z<-3.5){pState='reset';pTimer=0;}
+      }
+      else if(pState==='reset'){
+        pTimer+=dt;
+        if(pTimer>0.8){
+          isValid=!isValid;patron.position.set(0,0,-3);patron.rotation.y=Math.PI;
+          resetGate();pState='walk';pTimer=0;pFlash=0;
+        }
+      }
     };
     target.set(0,1.4,2);orbitOpts={az:0.7,pol:0.8,r:18,auto:0.0010};
 
