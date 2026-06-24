@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+<style>
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:#071423;color:#e8f3fb;font-family:'IBM Plex Mono','Courier New',monospace;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+  ::selection{background:#ffb24d;color:#071423;}
+  @keyframes rfpulse{0%{transform:translate(-50%,-50%) scale(.2);opacity:.9}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
+  @keyframes scanmove{0%{transform:translateY(-10vh)}100%{transform:translateY(110vh)}}
+  @keyframes chipblink{0%,100%{opacity:.35}50%{opacity:1}}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  @keyframes glowdrift{0%,100%{transform:translateX(-50%) translateY(0) scale(1);opacity:.55}50%{transform:translateX(-46%) translateY(34px) scale(1.12);opacity:.8}}
+  @keyframes glowdrift2{0%,100%{transform:translate(0,0) scale(1);opacity:.4}50%{transform:translate(36px,-26px) scale(1.16);opacity:.65}}
+  @keyframes scrolldot{0%{transform:translateY(0);opacity:0}30%{opacity:1}100%{transform:translateY(11px);opacity:0}}
+  @keyframes splashmark{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+  @keyframes sweep{0%{transform:translateX(-130%)}100%{transform:translateX(260%)}}
+  @keyframes bitflow{0%{transform:translateX(0);opacity:0}12%{opacity:1}88%{opacity:1}100%{transform:translateX(46px);opacity:0}}
+  @keyframes gridfade{0%,100%{opacity:.25}50%{opacity:.7}}
+</style>
+</helmet>
+
+<div ref="{{ rootRef }}" data-screen-label="RFID Technical Sheet" style="position:relative;width:100%;min-height:100vh;background-color:#071423;background-image:linear-gradient(rgba(125,196,240,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(125,196,240,.05) 1px,transparent 1px);background-size:30px 30px;">
+
+  <!-- splash gate -->
+  <sc-if value="{{ showSplash }}" hint-placeholder-val="{{ true }}">
+  <div data-splash style="position:fixed;inset:0;z-index:200;background:#050f1c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;padding:24px;background-image:radial-gradient(120% 90% at 50% 30%,rgba(255,178,77,.10),transparent 55%);">
+    <i class="ph-fill ph-broadcast" style="font-size:60px;color:#ffb24d;animation:splashmark 1s ease both;"></i>
+    <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(56px,13vw,150px);letter-spacing:-.03em;color:#e8f3fb;line-height:.9;">R<span style="color:#ffb24d;">F</span>ID</div>
+    <div style="font-size:12px;letter-spacing:.26em;color:#7fa9c9;">RADIO-FREQUENCY IDENTIFICATION</div>
+    <div style="font-size:14px;line-height:1.8;color:#bcd6ea;max-width:46ch;">Scroll untuk menelusuri cara kerjanya — satu lapisan demi satu lapisan.</div>
+    <button onClick="{{ enterSite }}" style="margin-top:12px;display:inline-flex;align-items:center;gap:10px;background:#ffb24d;color:#071423;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;letter-spacing:.12em;padding:15px 28px;border:none;border-radius:2px;cursor:pointer;">MASUK <i class="ph ph-arrow-right"></i></button>
+    <div style="position:absolute;bottom:26px;font-size:10px;letter-spacing:.2em;color:#2f526e;">REV 1.0 · TECHNICAL SHEET</div>
+  </div>
+  </sc-if>
+
+  <!-- cinematic atmosphere -->
+  <div style="position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(120% 80% at 72% -10%,rgba(255,178,77,.08),transparent 52%),radial-gradient(110% 95% at 8% 110%,rgba(40,110,180,.18),transparent 60%);"></div>
+  <div style="position:fixed;top:-18%;left:50%;width:72vw;height:72vw;max-width:920px;max-height:920px;pointer-events:none;z-index:1;background:radial-gradient(circle,rgba(255,178,77,.16),transparent 62%);filter:blur(26px);animation:glowdrift 19s ease-in-out infinite;"></div>
+  <div style="position:fixed;bottom:-12%;right:-6%;width:58vw;height:58vw;max-width:760px;max-height:760px;pointer-events:none;z-index:1;background:radial-gradient(circle,rgba(60,130,200,.18),transparent 60%);filter:blur(32px);animation:glowdrift2 23s ease-in-out infinite;"></div>
+
+  <!-- vignette + letterbox -->
+  <div style="position:fixed;inset:0;pointer-events:none;z-index:55;background:radial-gradient(140% 110% at 50% 48%,transparent 56%,rgba(2,8,16,.42) 100%);"></div>
+  <div style="position:fixed;top:0;left:0;width:100%;height:38px;pointer-events:none;z-index:58;background:linear-gradient(to bottom,rgba(2,8,16,.85),transparent);"></div>
+  <div style="position:fixed;bottom:0;left:0;width:100%;height:52px;pointer-events:none;z-index:58;background:linear-gradient(to top,rgba(2,8,16,.85),transparent);"></div>
+
+  <!-- scan line ambience -->
+  <div style="position:fixed;left:0;top:0;width:100%;height:140px;pointer-events:none;z-index:60;background:linear-gradient(to bottom,rgba(125,196,240,0) 0%,rgba(125,196,240,.05) 50%,rgba(125,196,240,0) 100%);animation:scanmove 11s linear infinite;"></div>
+
+  <!-- progress bar -->
+  <div style="position:fixed;left:0;top:0;width:100%;height:2px;z-index:70;background:rgba(125,196,240,.12);">
+    <div data-progress="1" style="height:100%;width:0%;background:#ffb24d;box-shadow:0 0 12px rgba(255,178,77,.7);"></div>
+  </div>
+
+  <!-- top title strip -->
+  <header style="position:fixed;top:0;left:0;width:100%;z-index:65;display:flex;justify-content:space-between;align-items:center;padding:14px 24px;backdrop-filter:blur(8px);background:rgba(7,20,35,.55);border-bottom:1px solid rgba(125,196,240,.14);">
+    <div style="display:flex;align-items:center;gap:10px;font-size:12px;letter-spacing:.18em;color:#9cc2dd;">
+      <i class="ph-fill ph-broadcast" style="color:#ffb24d;font-size:18px;"></i>
+      <span style="color:#e8f3fb;font-weight:600;">RFID</span><span style="color:#4d7796;">// TECHNICAL SHEET</span>
+    </div>
+    <div style="display:flex;gap:18px;font-size:11px;letter-spacing:.16em;color:#4d7796;">
+      <span>REV 1.0</span><span>SHEET 01 / 01</span><span style="color:#ffb24d;">SCALE 1:1</span>
+    </div>
+  </header>
+
+  <!-- ============ HERO ============ -->
+  <section style="position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:120px 7vw 80px;max-width:1280px;margin:0 auto;">
+    <div data-reveal="1" style="display:flex;align-items:center;gap:14px;font-size:12px;letter-spacing:.3em;color:#ffb24d;margin-bottom:28px;">
+      <span style="width:42px;height:1px;background:#ffb24d;display:inline-block;"></span>
+      RADIO-FREQUENCY IDENTIFICATION
+    </div>
+    <h1 data-reveal="1" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(64px,15vw,200px);line-height:.86;letter-spacing:-.03em;margin:0;color:#e8f3fb;">
+      R<span style="color:#ffb24d;">F</span>ID
+    </h1>
+    <div data-reveal="1" style="display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 38px;font-size:13px;letter-spacing:.12em;color:#7fa9c9;">
+      <span style="border:1px solid rgba(125,196,240,.25);padding:5px 12px;border-radius:2px;">RADIO</span>
+      <span style="border:1px solid rgba(125,196,240,.25);padding:5px 12px;border-radius:2px;">FREQUENCY</span>
+      <span style="border:1px solid rgba(125,196,240,.25);padding:5px 12px;border-radius:2px;">IDENTIFICATION</span>
+    </div>
+    <p data-reveal="1" style="max-width:62ch;font-size:clamp(15px,1.5vw,19px);line-height:1.7;color:#bcd6ea;margin:0;">
+      RFID adalah teknologi yang memakai <strong style="color:#fff;">gelombang radio</strong> untuk mengenali objek dari jarak jauh — tanpa kontak dan tanpa garis pandang. Sebuah <em style="color:#ffb24d;font-style:normal;">tag</em> kecil menyimpan identitas unik, dan sebuah <em style="color:#ffb24d;font-style:normal;">reader</em> membacanya lewat udara dalam hitungan milidetik. Inilah teknologi di balik kartu akses, e-Toll, label toko, sampai paspor elektronik.
+    </p>
+    <div data-reveal="1" style="display:flex;gap:28px;margin-top:48px;flex-wrap:wrap;">
+      <a href="#anatomy" style="text-decoration:none;display:inline-flex;align-items:center;gap:10px;background:#ffb24d;color:#071423;font-weight:600;font-size:13px;letter-spacing:.1em;padding:14px 24px;border-radius:2px;">
+        BEDAH KOMPONEN <i class="ph ph-arrow-down"></i>
+      </a>
+      <a href="#how" style="text-decoration:none;display:inline-flex;align-items:center;gap:10px;color:#bcd6ea;font-size:13px;letter-spacing:.1em;padding:14px 4px;border-bottom:1px solid rgba(125,196,240,.3);">
+        CARA KERJANYA <i class="ph ph-arrow-right"></i>
+      </a>
+    </div>
+
+    <div style="position:absolute;right:7vw;top:130px;width:160px;height:160px;border:1px solid rgba(125,196,240,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;animation:floaty 6s ease-in-out infinite;">
+      <div style="width:1px;height:160px;background:rgba(125,196,240,.2);position:absolute;"></div>
+      <div style="height:1px;width:160px;background:rgba(125,196,240,.2);position:absolute;"></div>
+      <i class="ph ph-cell-signal-full" style="color:#ffb24d;font-size:34px;"></i>
+    </div>
+
+    <div style="position:absolute;bottom:36px;left:7vw;display:flex;flex-direction:column;gap:10px;font-size:10px;letter-spacing:.24em;color:#7fa9c9;">
+      SCROLL
+      <span style="width:20px;height:32px;border:1px solid #7fa9c9;border-radius:12px;display:flex;justify-content:center;padding-top:6px;"><span style="width:3px;height:7px;background:#ffb24d;border-radius:2px;animation:scrolldot 1.6s ease-in-out infinite;"></span></span>
+    </div>
+  </section>
+
+  <!-- ============ HOW IT WORKS ============ -->
+  <section id="how" style="position:relative;padding:100px 7vw;max-width:1280px;margin:0 auto;">
+    <div data-reveal="1" style="font-size:12px;letter-spacing:.3em;color:#ffb24d;margin-bottom:16px;">FIG. 01 — PRINCIPLE OF OPERATION</div>
+    <h2 data-reveal="1" style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(34px,5vw,60px);line-height:1.02;letter-spacing:-.02em;margin:0 0 18px;color:#e8f3fb;">How RFID works</h2>
+    <p data-reveal="1" style="max-width:60ch;font-size:16px;line-height:1.7;color:#bcd6ea;margin:0 0 56px;">Tag pasif <strong style="color:#fff;">tidak punya baterai</strong>. Ia hidup hanya saat berada di dalam medan radio reader. Begini alurnya:</p>
+
+    <div data-reveal="1" style="position:relative;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;border:1px solid rgba(125,196,240,.18);border-radius:6px;padding:48px 36px;background:rgba(12,33,56,.5);overflow:hidden;">
+      <div style="position:relative;flex:0 0 auto;text-align:center;z-index:3;">
+        <div style="width:120px;height:150px;border:1.5px solid #7fc4f0;border-radius:8px;background:rgba(7,20,35,.8);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;box-shadow:0 0 30px rgba(125,196,240,.15);">
+          <i class="ph ph-wifi-high" style="font-size:40px;color:#ffb24d;"></i>
+          <span style="font-size:11px;letter-spacing:.12em;color:#9cc2dd;">READER</span>
+        </div>
+        <div style="margin-top:12px;font-size:11px;color:#4d7796;letter-spacing:.1em;">INTERROGATOR</div>
+      </div>
+      <div style="position:relative;flex:1 1 240px;height:160px;min-width:200px;">
+        <div style="position:absolute;left:0;top:50%;width:50%;height:1px;background:linear-gradient(90deg,#ffb24d,transparent);transform:translateY(-50%);"></div>
+        <div style="position:absolute;left:50%;top:50%;width:30px;height:30px;border:1.5px solid rgba(255,178,77,.6);border-radius:50%;animation:rfpulse 2.4s ease-out infinite;"></div>
+        <div style="position:absolute;left:50%;top:50%;width:30px;height:30px;border:1.5px solid rgba(255,178,77,.6);border-radius:50%;animation:rfpulse 2.4s ease-out infinite .8s;"></div>
+        <div style="position:absolute;left:50%;top:50%;width:30px;height:30px;border:1.5px solid rgba(255,178,77,.6);border-radius:50%;animation:rfpulse 2.4s ease-out infinite 1.6s;"></div>
+        <div style="position:absolute;right:0;top:30%;width:50%;height:1px;background:repeating-linear-gradient(90deg,#7fc4f0 0,#7fc4f0 6px,transparent 6px,transparent 12px);"></div>
+        <div style="position:absolute;right:50%;top:30%;font-size:10px;color:#7fc4f0;letter-spacing:.1em;transform:translateY(-16px);">← backscatter</div>
+      </div>
+      <div style="position:relative;flex:0 0 auto;text-align:center;z-index:3;">
+        <div style="width:130px;height:90px;border:1.5px solid #ffb24d;border-radius:6px;background:rgba(7,20,35,.8);display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 0 30px rgba(255,178,77,.12);">
+          <div style="width:84px;height:54px;border:1px solid rgba(125,196,240,.5);border-radius:4px;"></div>
+          <div style="position:absolute;width:14px;height:14px;background:#ffb24d;border-radius:2px;animation:chipblink 1.6s ease-in-out infinite;"></div>
+        </div>
+        <div style="margin-top:12px;font-size:11px;color:#4d7796;letter-spacing:.1em;">PASSIVE TAG</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;margin-top:40px;background:rgba(125,196,240,.14);border:1px solid rgba(125,196,240,.14);border-radius:6px;overflow:hidden;">
+      <sc-for list="{{ steps }}" as="step" hint-placeholder-count="4">
+        <div data-reveal="1" style="background:#0c2138;padding:26px 22px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:30px;color:#ffb24d;font-weight:700;margin-bottom:10px;">{{ step.n }}</div>
+          <div style="font-size:13px;line-height:1.6;color:#cfe2f2;">{{ step.t }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ============ ANATOMY — pinned cinematic build ============ -->
+  <section id="anatomy" data-anatomy="1" style="position:relative;height:520vh;">
+    <div data-sticky="1" style="position:sticky;top:0;height:100vh;overflow:hidden;">
+    <div style="position:absolute;inset:0;display:grid;grid-template-columns:1.05fr 1fr;align-items:center;gap:40px;max-width:1320px;margin:0 auto;padding:90px 7vw 60px;">
+
+      <!-- LEFT: focused component text + mini diagram -->
+      <div style="position:relative;z-index:4;">
+        <div style="font-size:12px;letter-spacing:.3em;color:#ffb24d;margin-bottom:22px;">FIG. 02 — EXPLODED ASSEMBLY</div>
+        <div style="position:relative;min-height:420px;">
+
+          <!-- STEP 0 — Substrate -->
+          <div data-step="0" style="position:absolute;inset:0;opacity:0;">
+            <div style="position:relative;width:154px;height:96px;border:1.5px solid rgba(125,196,240,.55);border-radius:8px;overflow:hidden;background:rgba(12,33,56,.6);background-image:linear-gradient(rgba(125,196,240,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(125,196,240,.18) 1px,transparent 1px);background-size:14px 14px;margin-bottom:26px;">
+              <div style="position:absolute;inset:0;animation:gridfade 3s ease-in-out infinite;"></div>
+              <div style="position:absolute;top:0;left:0;width:40px;height:100%;background:linear-gradient(90deg,transparent,rgba(125,196,240,.4),transparent);animation:sweep 3.2s linear infinite;"></div>
+            </div>
+            <div style="font-size:11px;letter-spacing:.24em;color:#7fa9c9;margin-bottom:12px;">LAYER 01 / 04</div>
+            <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(34px,4.4vw,56px);line-height:1.02;letter-spacing:-.02em;margin:0;color:#fff;">Substrate</h2>
+            <div style="font-size:13px;letter-spacing:.12em;color:#ffb24d;margin:8px 0 18px;">LAPISAN DASAR</div>
+            <p style="max-width:46ch;font-size:15px;line-height:1.75;color:#cfe2f2;margin:0 0 22px;">Lapisan dasar dari film PET atau kertas. Inilah fondasi tempat antena dan chip dipasang — memberi bentuk fisik dan kekuatan agar semua komponen tetap di posisinya.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <span style="font-size:12px;color:#bcd6ea;border:1px solid rgba(125,196,240,.25);border-radius:2px;padding:7px 12px;">Bahan · PET / kertas</span>
+              <span style="font-size:12px;color:#bcd6ea;border:1px solid rgba(125,196,240,.25);border-radius:2px;padding:7px 12px;">Tebal · 25–50 µm</span>
+            </div>
+          </div>
+
+          <!-- STEP 1 — Antenna -->
+          <div data-step="1" style="position:absolute;inset:0;opacity:0;">
+            <div style="position:relative;width:154px;height:96px;display:flex;align-items:center;justify-content:center;margin-bottom:26px;">
+              <div style="position:absolute;width:120px;height:72px;border:1.5px solid rgba(255,178,77,.7);border-radius:8px;"></div>
+              <div style="position:absolute;width:92px;height:52px;border:1.5px solid rgba(255,178,77,.5);border-radius:6px;"></div>
+              <div style="position:absolute;left:50%;top:50%;width:22px;height:22px;border:1.5px solid rgba(255,178,77,.7);border-radius:50%;animation:rfpulse 2.2s ease-out infinite;"></div>
+              <div style="position:absolute;left:50%;top:50%;width:22px;height:22px;border:1.5px solid rgba(255,178,77,.7);border-radius:50%;animation:rfpulse 2.2s ease-out infinite 1.1s;"></div>
+              <div style="position:absolute;left:50%;top:50%;width:8px;height:8px;background:#ffb24d;border-radius:50%;transform:translate(-50%,-50%);"></div>
+            </div>
+            <div style="font-size:11px;letter-spacing:.24em;color:#7fa9c9;margin-bottom:12px;">LAYER 02 / 04</div>
+            <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(34px,4.4vw,56px);line-height:1.02;letter-spacing:-.02em;margin:0;color:#fff;">Antenna</h2>
+            <div style="font-size:13px;letter-spacing:.12em;color:#ffb24d;margin:8px 0 18px;">ANTENA KUMPARAN</div>
+            <p style="max-width:46ch;font-size:15px;line-height:1.75;color:#cfe2f2;margin:0 0 22px;">Kumparan logam yang menangkap gelombang radio reader untuk memberi daya ke chip, lalu memancarkan balik datanya. Ukuran dan bentuknya menentukan frekuensi kerja tag.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <span style="font-size:12px;color:#bcd6ea;border:1px solid rgba(125,196,240,.25);border-radius:2px;padding:7px 12px;">Bahan · Tembaga / aluminium</span>
+              <span style="font-size:12px;color:#bcd6ea;border:1px solid rgba(125,196,240,.25);border-radius:2px;padding:7px 12px;">Bentuk · Coil / dipole</span>
+            </div>
+          </div>
+
+          <!-- STEP 2 — Microchip -->
+          <div data-step="2" style="position:absolute;inset:0;opacity:0;">
+            <div style="position:relative;width:154px;height:96px;display:flex;align-items:center;justify-content:center;margin-bottom:26px;">
+              <div style="position:relative;width:46px;height:46px;background:#ffb24d;border-radius:5px;box-shadow:0 0 20px rgba(255,178,77,.5);display:flex;align-items:center;justify-content:center;">
+                <div style="width:20px;height:20px;border:2px solid #071423;border-radius:2px;animation:chipblink 1.4s ease-in-out infinite;"></div>
+              </div>
+              <div style="position:absolute;left:18px;top:50%;width:46px;height:1px;background:rgba(127,196,240,.4);"></div>
+              <div style="position:absolute;left:18px;top:50%;width:7px;height:7px;border-radius:50%;background:#7fc4f0;transform:translateY(-50%);animation:bitflow 1.8s linear infinite;"></div>
+              <div style="position:absolute;left:18px;top:50%;width:7px;height:7px;border-radius:50%;background:#7fc4f0;transform:translateY(-50%);animation:bitflow 1.8s linear infinite .9s;"></div>
+            </div>
+            <div style="font-size:11px;letter-spacing:.24em;color:#7fa9c9;margin-bottom:12px;">LAYER 03 / 04</div>
+            <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(34px,4.4vw,56px);line-height:1.02;letter-spacing:-.02em;margin:0;color:#fff;">Microchip</h2>
+            <div style="font-size:13px;letter-spacing:.12em;color:#ffb24d;margin:8px 0 18px;">OTAK TAG · IC</div>
+            <p style="max-width:46ch;font-size:15px;line-height:1.75;color:#cfe2f2;margin:0 0 22px;">Otak dari tag. Menyimpan nomor identitas unik (UID/EPC) dan mengatur seluruh komunikasi dengan reader. Ukurannya bisa lebih kecil dari sebutir pasir.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <span style="font-size:12px;color:#bcd6ea;border:1px solid rgba(125,196,240,.25);border-radius:2px;padding:7px 12px;">Ukuran · 0.3–0.5 mm</span>
+              <span style="font-size:12px;color:#bcd6ea;border:1px solid rgba(125,196,240,.25);border-radius:2px;padding:7px 12px;">Daya · dari medan RF</span>
+            </div>
+          </div>
+
+          <!-- STEP 3 — Casing -->
+          <div data-step="3" style="position:absolute;inset:0;opacity:0;">
+            <div style="position:relative;width:154px;height:96px;border:1.5px solid rgba(232,243,251,.6);border-radius:8px;overflow:hidden;background:rgba(232,243,251,.06);margin-bottom:26px;">
+              <div style="position:absolute;left:12px;top:12px;font-size:10px;color:#e8f3fb;letter-spacing:.14em;font-weight:600;">RFID</div>
+              <div style="position:absolute;left:12px;bottom:14px;display:flex;gap:2px;align-items:flex-end;height:22px;">
+                <div style="width:2px;height:22px;background:#e8f3fb;"></div><div style="width:3px;height:22px;background:#e8f3fb;"></div><div style="width:1px;height:22px;background:#e8f3fb;"></div><div style="width:3px;height:22px;background:#e8f3fb;"></div><div style="width:2px;height:22px;background:#e8f3fb;"></div><div style="width:1px;height:22px;background:#e8f3fb;"></div><div style="width:3px;height:22px;background:#e8f3fb;"></div>
+              </div>
+              <div style="position:absolute;top:0;left:0;width:50px;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:sweep 3.4s linear infinite;"></div>
+            </div>
+            <div style="font-size:11px;letter-spacing:.24em;color:#7fa9c9;margin-bottom:12px;">LAYER 04 / 04</div>
+            <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(34px,4.4vw,56px);line-height:1.02;letter-spacing:-.02em;margin:0;color:#fff;">Casing</h2>
+            <div style="font-size:13px;letter-spacing:.12em;color:#ffb24d;margin:8px 0 18px;">PELINDUNG · LAMINATE</div>
+            <p style="max-width:46ch;font-size:15px;line-height:1.75;color:#cfe2f2;margin:0 0 22px;">Lapisan laminasi pelindung yang membungkus seluruh inlay. Membuat tag tahan air dan goresan, sekaligus jadi permukaan untuk cetak label. Jadilah satu tag RFID utuh.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <span style="font-size:12px;color:#bcd6ea;border:1px solid rgba(125,196,240,.25);border-radius:2px;padding:7px 12px;">Bahan · PET / PVC / kertas</span>
+              <span style="font-size:12px;color:#bcd6ea;border:1px solid rgba(125,196,240,.25);border-radius:2px;padding:7px 12px;">Fungsi · Proteksi & label</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- step dots -->
+        <div style="display:flex;gap:8px;margin-top:20px;">
+          <div data-dot="0" style="width:34px;height:3px;border-radius:2px;background:rgba(125,196,240,.25);"></div>
+          <div data-dot="1" style="width:34px;height:3px;border-radius:2px;background:rgba(125,196,240,.25);"></div>
+          <div data-dot="2" style="width:34px;height:3px;border-radius:2px;background:rgba(125,196,240,.25);"></div>
+          <div data-dot="3" style="width:34px;height:3px;border-radius:2px;background:rgba(125,196,240,.25);"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: 3D stage -->
+      <div style="position:relative;height:72vh;min-height:440px;perspective:1500px;">
+        <div data-inner="1" style="position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d;transform:rotateX(58deg) rotateZ(-34deg);">
+
+          <!-- substrate -->
+          <div data-layer="substrate" style="position:absolute;left:0;top:0;width:300px;height:190px;">
+            <div data-card style="width:300px;height:190px;border:1.5px solid rgba(125,196,240,.55);border-radius:14px;background:rgba(12,33,56,.6);background-image:linear-gradient(rgba(125,196,240,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(125,196,240,.10) 1px,transparent 1px);background-size:16px 16px;">
+              <div style="position:absolute;left:8px;top:8px;font-size:9px;color:#7fc4f0;letter-spacing:.1em;">SUBSTRATE · PET</div>
+            </div>
+          </div>
+
+          <!-- antenna -->
+          <div data-layer="antenna" style="position:absolute;left:0;top:0;width:300px;height:190px;display:flex;align-items:center;justify-content:center;">
+            <div data-card style="width:300px;height:190px;display:flex;align-items:center;justify-content:center;">
+              <svg viewBox="0 0 300 190" width="300" height="190" style="overflow:visible;">
+                <rect x="14" y="14" width="272" height="162" rx="16" fill="none" stroke="#ffb24d" stroke-width="2.4"/>
+                <rect x="28" y="26" width="244" height="138" rx="13" fill="none" stroke="#ffb24d" stroke-width="2.4" opacity=".88"/>
+                <rect x="42" y="38" width="216" height="114" rx="11" fill="none" stroke="#ffb24d" stroke-width="2.4" opacity=".76"/>
+                <rect x="56" y="50" width="188" height="90" rx="9" fill="none" stroke="#ffb24d" stroke-width="2.4" opacity=".64"/>
+                <rect x="70" y="62" width="160" height="66" rx="7" fill="none" stroke="#ffb24d" stroke-width="2.4" opacity=".52"/>
+                <line x1="150" y1="62" x2="150" y2="95" stroke="#ffb24d" stroke-width="2.4"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- chip -->
+          <div data-layer="chip" style="position:absolute;left:0;top:0;width:300px;height:190px;display:flex;align-items:center;justify-content:center;">
+            <div data-card style="position:relative;width:46px;height:46px;background:#ffb24d;border-radius:4px;box-shadow:0 0 18px rgba(255,178,77,.55);display:flex;align-items:center;justify-content:center;">
+              <div style="width:22px;height:22px;border:2px solid #071423;border-radius:2px;"></div>
+              <div style="position:absolute;left:-9px;top:12px;width:9px;height:2px;background:#7fc4f0;"></div>
+              <div style="position:absolute;left:-9px;top:30px;width:9px;height:2px;background:#7fc4f0;"></div>
+              <div style="position:absolute;right:-9px;top:12px;width:9px;height:2px;background:#7fc4f0;"></div>
+              <div style="position:absolute;right:-9px;top:30px;width:9px;height:2px;background:#7fc4f0;"></div>
+            </div>
+          </div>
+
+          <!-- casing -->
+          <div data-layer="casing" style="position:absolute;left:0;top:0;width:300px;height:190px;">
+            <div data-card style="width:300px;height:190px;border:1.5px solid rgba(232,243,251,.6);border-radius:14px;background:rgba(232,243,251,.07);backdrop-filter:blur(1px);">
+              <div style="position:absolute;left:14px;top:14px;font-size:11px;color:#e8f3fb;letter-spacing:.12em;font-weight:600;">RFID</div>
+              <div style="position:absolute;left:14px;top:34px;display:flex;gap:2px;align-items:flex-end;height:26px;">
+                <div style="width:2px;height:26px;background:#e8f3fb;"></div><div style="width:3px;height:26px;background:#e8f3fb;"></div><div style="width:1px;height:26px;background:#e8f3fb;"></div><div style="width:3px;height:26px;background:#e8f3fb;"></div><div style="width:2px;height:26px;background:#e8f3fb;"></div><div style="width:1px;height:26px;background:#e8f3fb;"></div><div style="width:3px;height:26px;background:#e8f3fb;"></div><div style="width:2px;height:26px;background:#e8f3fb;"></div>
+              </div>
+              <div style="position:absolute;right:14px;bottom:12px;font-size:9px;color:#9cc2dd;letter-spacing:.1em;">CASING · LAMINATE</div>
+            </div>
+          </div>
+
+        </div>
+        <div style="position:absolute;right:8px;top:8px;font-size:10px;letter-spacing:.14em;color:#4d7796;">⊕ SCROLL TO ASSEMBLE</div>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- ============ FREQUENCY BANDS ============ -->
+  <section style="position:relative;padding:100px 7vw;max-width:1280px;margin:0 auto;">
+    <div data-reveal="1" style="font-size:12px;letter-spacing:.3em;color:#ffb24d;margin-bottom:16px;">FIG. 03 — OPERATING BANDS</div>
+    <h2 data-reveal="1" style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(34px,5vw,60px);line-height:1.02;letter-spacing:-.02em;margin:0 0 18px;color:#e8f3fb;">Frequency bands</h2>
+    <p data-reveal="1" style="max-width:60ch;font-size:16px;line-height:1.7;color:#bcd6ea;margin:0 0 48px;">Frekuensi menentukan jangkauan baca dan kegunaannya. Tiga pita utama yang dipakai RFID:</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;">
+      <sc-for list="{{ bands }}" as="b" hint-placeholder-count="3">
+        <div data-reveal="1" style="border:1px solid rgba(125,196,240,.18);border-radius:6px;background:rgba(12,33,56,.5);padding:28px 24px;position:relative;overflow:hidden;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:48px;font-weight:700;color:#ffb24d;letter-spacing:-.02em;">{{ b.abbr }}</div>
+          <div style="font-size:18px;color:#e8f3fb;margin:6px 0 18px;">{{ b.freq }}</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#bcd6ea;margin-bottom:8px;"><i class="ph ph-arrows-out-line-horizontal" style="color:#7fc4f0;"></i>{{ b.range }}</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#bcd6ea;"><i class="ph ph-tag" style="color:#7fc4f0;"></i>{{ b.use }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ============ USE CASES ============ -->
+  <section id="usecases" style="position:relative;padding:100px 7vw 60px;max-width:1280px;margin:0 auto;">
+    <div data-reveal="1" style="font-size:12px;letter-spacing:.3em;color:#ffb24d;margin-bottom:16px;">FIG. 04 — FIELD APPLICATIONS</div>
+    <h2 data-reveal="1" style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(34px,5vw,60px);line-height:1.02;letter-spacing:-.02em;margin:0 0 18px;color:#e8f3fb;">Where it's used</h2>
+    <p data-reveal="1" style="max-width:60ch;font-size:16px;line-height:1.7;color:#bcd6ea;margin:0 0 48px;">RFID sudah ada di sekitar kita setiap hari — sering tanpa kita sadari:</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;">
+      <sc-for list="{{ useCases }}" as="u" hint-placeholder-count="7">
+        <div data-reveal="1" style="border:1px solid rgba(125,196,240,.18);border-radius:6px;background:rgba(12,33,56,.5);padding:28px 24px;position:relative;transition:border-color .25s,transform .25s;" style-hover="border-color:#ffb24d;transform:translateY(-4px);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">
+            <i class="ph {{ u.icon }}" style="font-size:38px;color:#ffb24d;"></i>
+            <span style="font-size:10px;letter-spacing:.14em;color:#071423;background:#7fc4f0;padding:3px 8px;border-radius:2px;font-weight:600;">{{ u.band }}</span>
+          </div>
+          <h3 style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;margin:0 0 4px;color:#fff;">{{ u.title }}</h3>
+          <div style="font-size:12px;color:#ffb24d;letter-spacing:.06em;margin-bottom:12px;">{{ u.sub }}</div>
+          <p style="font-size:13px;line-height:1.65;color:#bcd6ea;margin:0;">{{ u.desc }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer style="position:relative;margin:60px auto 0;max-width:1280px;border-top:1px solid rgba(125,196,240,.18);">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));">
+      <div style="padding:22px;border-right:1px solid rgba(125,196,240,.14);">
+        <div style="font-size:10px;letter-spacing:.16em;color:#4d7796;margin-bottom:6px;">TITLE</div>
+        <div style="font-size:13px;color:#e8f3fb;">RFID — How it works & where it lives</div>
+      </div>
+      <div style="padding:22px;border-right:1px solid rgba(125,196,240,.14);">
+        <div style="font-size:10px;letter-spacing:.16em;color:#4d7796;margin-bottom:6px;">AUDIENCE</div>
+        <div style="font-size:13px;color:#e8f3fb;">SMK IT · IT staff · management</div>
+      </div>
+      <div style="padding:22px;border-right:1px solid rgba(125,196,240,.14);">
+        <div style="font-size:10px;letter-spacing:.16em;color:#4d7796;margin-bottom:6px;">TYPE</div>
+        <div style="font-size:13px;color:#e8f3fb;">Passive RFID tag</div>
+      </div>
+      <div style="padding:22px;">
+        <div style="font-size:10px;letter-spacing:.16em;color:#4d7796;margin-bottom:6px;">REV</div>
+        <div style="font-size:13px;color:#ffb24d;">1.0 — 2026</div>
+      </div>
+    </div>
+  </footer>
+  <div style="text-align:center;padding:30px;font-size:11px;letter-spacing:.16em;color:#2f526e;">END OF SHEET · RADIO-FREQUENCY IDENTIFICATION</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.rootRef = React.createRef();
+    this.state = { showSplash:true };
+  }
+
+  get steps(){
+    return [
+      { n:'01', t:'Reader memancarkan gelombang radio terus-menerus ke sekitarnya.' },
+      { n:'02', t:'Antena tag menangkap gelombang itu dan mengubahnya jadi listrik untuk menyalakan chip — tanpa baterai.' },
+      { n:'03', t:'Chip mengaktifkan, lalu mengirim balik nomor ID-nya dengan memantulkan sinyal (backscatter).' },
+      { n:'04', t:'Reader menangkap ID tersebut dan meneruskannya ke sistem untuk diproses.' },
+    ];
+  }
+  get bands(){
+    return [
+      { abbr:'LF', freq:'125–134 kHz', range:'Jangkauan ± 10 cm', use:'Akses, microchip hewan' },
+      { abbr:'HF', freq:'13.56 MHz', range:'Jangkauan ± 1 m', use:'Kartu akses, NFC, e-KTP, perpustakaan' },
+      { abbr:'UHF', freq:'860–960 MHz', range:'Jangkauan ± 12 m', use:'Retail, logistik, e-Toll' },
+    ];
+  }
+  get useCases(){
+    return [
+      { icon:'ph-storefront', band:'UHF', title:'Retail & Inventory', sub:'Pelacakan stok otomatis', desc:'Ribuan barang dibaca sekaligus tanpa scan satu per satu. Stok real-time dan kehilangan barang berkurang.' },
+      { icon:'ph-road-horizon', band:'UHF', title:'e-Toll & Transport', sub:'Bayar tanpa berhenti', desc:'Tag di kendaraan dibaca saat melintas gerbang, transaksi otomatis tanpa harus antre lama.' },
+      { icon:'ph-identification-badge', band:'HF', title:'Akses & Identitas', sub:'Kartu masuk gedung', desc:'Tap kartu untuk membuka pintu, absensi, dan identifikasi karyawan secara aman.' },
+      { icon:'ph-truck', band:'UHF', title:'Logistik & Supply Chain', sub:'Pelacakan pengiriman', desc:'Palet dan kontainer dilacak di gudang serta jalur distribusi untuk visibilitas penuh.' },
+      { icon:'ph-books', band:'HF', title:'Perpustakaan', sub:'Manajemen buku', desc:'Peminjaman mandiri, inventarisasi rak yang cepat, dan gerbang anti-pencurian.' },
+      { icon:'ph-paw-print', band:'LF', title:'Hewan & Ternak', sub:'Microchip identitas', desc:'Microchip seukuran beras ditanam untuk identifikasi hewan peliharaan dan ternak.' },
+      { icon:'ph-identification-card', band:'HF', title:'Paspor & e-KTP', sub:'Dokumen elektronik', desc:'Chip RFID menyimpan data untuk verifikasi identitas, misalnya di gerbang imigrasi.' },
+    ];
+  }
+
+  componentDidMount(){ this._mounted=true; this._boot(0); }
+  _boot(n){
+    const root = this.rootRef.current;
+    if(window.gsap && root && root.querySelector('[data-anatomy]') && root.querySelector('[data-inner]')){ this._setup(); }
+    else if(n<200 && this._mounted){ this._t=setTimeout(()=>this._boot(n+1), 50); }
+  }
+
+  _setup(){
+    const g = window.gsap;
+    const root = this.rootRef.current;
+
+    // Lenis smooth scroll (its own rAF, independent of ScrollTrigger)
+    if(window.Lenis && !window.__rfidLenis){
+      const lenis = new window.Lenis({ duration:1.15, smoothWheel:true, wheelMultiplier:0.9 });
+      window.__rfidLenis = lenis;
+      const raf = (t)=>{ lenis.raf(t); requestAnimationFrame(raf); };
+      requestAnimationFrame(raf);
+    }
+
+    // reveals via IntersectionObserver (CSS transitions — nothing for the runtime to revert)
+    const io = new IntersectionObserver((ents)=>{
+      ents.forEach(e=>{ if(e.isIntersecting){ e.target.style.opacity='1'; e.target.style.transform='none'; io.unobserve(e.target); } });
+    }, { rootMargin:'0px 0px -12% 0px' });
+    root.querySelectorAll('[data-reveal]').forEach(el=>{
+      el.style.opacity='0';
+      el.style.transform='translateY(26px)';
+      el.style.transition='opacity .7s cubic-bezier(.22,1,.36,1), transform .7s cubic-bezier(.22,1,.36,1)';
+      io.observe(el);
+    });
+    this._io = io;
+
+    // ===== assembly stage =====
+    const section = root.querySelector('[data-anatomy]');
+    const inner   = section.querySelector('[data-inner]');
+    const bar     = root.querySelector('[data-progress]');
+    const order   = ['substrate','antenna','chip','casing'];
+    const layerEls= order.map(id=>section.querySelector('[data-layer="'+id+'"]'));
+    const cardEls = layerEls.map(el=>el.querySelector('[data-card]') || el);
+    const stepEls = order.map((_,i)=>section.querySelector('[data-step="'+i+'"]'));
+    const dotEls  = order.map((_,i)=>section.querySelector('[data-dot="'+i+'"]'));
+    const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+    g.set(layerEls,{ xPercent:-50, yPercent:-50 });
+
+    const place = (p)=>{
+      const n = order.length;
+      const seg = p*n;
+      const active = clamp(Math.floor(seg), 0, n-1);
+      g.set(inner, { rotateX:58, rotateZ:-34 + p*15 });
+      layerEls.forEach((el,i)=>{
+        const local = clamp((seg - i + 0.35)/0.85, 0, 1);
+        const eased = local*local*(3-2*local);
+        g.set(el, { z: i*16 + (1-eased)*250, opacity: eased });
+        g.set(cardEls[i], { boxShadow: i===active && eased>0.05
+          ? '0 0 0 2px #ffb24d, 0 0 46px rgba(255,178,77,.42)' : 'none' });
+      });
+      stepEls.forEach((el,i)=>{ if(el) g.set(el, { opacity: i===active?1:0, y: i===active?0:16 }); });
+      dotEls.forEach((el,i)=>{ if(el) g.set(el, { background: i<=active?'#ffb24d':'rgba(125,196,240,.25)' }); });
+    };
+
+    const onScroll = ()=>{
+      const sy = window.scrollY || window.pageYOffset || 0;
+      const docH = (document.documentElement.scrollHeight - window.innerHeight) || 1;
+      if(bar) bar.style.width = clamp(sy/docH*100,0,100) + '%';
+      const total = (section.offsetHeight - window.innerHeight) || 1;
+      const p = clamp((-section.getBoundingClientRect().top)/total, 0, 1);
+      place(p);
+    };
+    place(0);
+    // drive from a continuous rAF loop — robust regardless of scroll-event wiring
+    this._running = true;
+    const loop = ()=>{ if(!this._running) return; onScroll(); requestAnimationFrame(loop); };
+    requestAnimationFrame(loop);
+  }
+
+  componentWillUnmount(){
+    this._mounted=false;
+    this._running=false;
+    if(this._t) clearTimeout(this._t);
+    if(this._io){ try{ this._io.disconnect(); }catch(e){} }
+  }
+
+  renderVals(){
+    return {
+      rootRef: this.rootRef,
+      showSplash: this.state.showSplash,
+      enterSite: () => {
+        const el = this.rootRef.current && this.rootRef.current.querySelector('[data-splash]');
+        if(window.gsap && el){
+          window.gsap.to(el, { yPercent:-100, duration:1, ease:'power4.inOut', onComplete:()=>this.setState({showSplash:false}) });
+        } else { this.setState({showSplash:false}); }
+      },
+      steps: this.steps,
+      bands: this.bands,
+      useCases: this.useCases,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;background:#071423;color:#e8f3fb;font-family:'IBM Plex Mono','Courier New',monospace;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+  ::selection{background:#ffb24d;color:#071423;}
+  @keyframes rfpulse{0%{transform:translate(-50%,-50%) scale(.2);opacity:.9}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
+  @keyframes scanmove{0%{transform:translateY(-10vh)}100%{transform:translateY(110vh)}}
+  @keyframes chipblink{0%,100%{opacity:.35}50%{opacity:1}}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  @keyframes glowdrift{0%,100%{transform:translateX(-50%) translateY(0) scale(1);opacity:.55}50%{transform:translateX(-46%) translateY(34px) scale(1.12);opacity:.8}}
+  @keyframes glowdrift2{0%,100%{transform:translate(0,0) scale(1);opacity:.4}50%{transform:translate(36px,-26px) scale(1.16);opacity:.65}}
+  @keyframes scrolldot{0%{transform:translateY(0);opacity:0}30%{opacity:1}100%{transform:translateY(11px);opacity:0}}
+  @keyframes splashmark{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+  @keyframes modalin{0%{opacity:0;transform:scale(.98)}100%{opacity:1;transform:scale(1)}}
+</style>
+</helmet>
+
+<div ref="{{ rootRef }}" data-screen-label="RFID Cinematic Site" style="position:relative;width:100%;min-height:100vh;background-color:#071423;background-image:linear-gradient(rgba(125,196,240,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(125,196,240,.05) 1px,transparent 1px);background-size:30px 30px;">
+
+  <!-- splash -->
+  <sc-if value="{{ showSplash }}" hint-placeholder-val="{{ true }}">
+  <div data-splash style="position:fixed;inset:0;z-index:300;background:#050f1c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;padding:24px;background-image:radial-gradient(120% 90% at 50% 30%,rgba(255,178,77,.10),transparent 55%);">
+    <i class="ph-fill ph-broadcast" style="font-size:60px;color:#ffb24d;animation:splashmark 1s ease both;"></i>
+    <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(56px,13vw,150px);letter-spacing:-.03em;color:#e8f3fb;line-height:.9;">R<span style="color:#ffb24d;">F</span>ID</div>
+    <div style="font-size:12px;letter-spacing:.26em;color:#7fa9c9;">RADIO-FREQUENCY IDENTIFICATION</div>
+    <div style="font-size:14px;line-height:1.8;color:#bcd6ea;max-width:48ch;">Sebuah perjalanan sinematik — putar, telusuri, dan simulasikan teknologi di balik kartu akses, e-Toll, dan label toko.</div>
+    <button onClick="{{ enterSite }}" style="margin-top:12px;display:inline-flex;align-items:center;gap:10px;background:#ffb24d;color:#071423;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;letter-spacing:.12em;padding:15px 28px;border:none;border-radius:2px;cursor:pointer;">MASUK <i class="ph ph-arrow-right"></i></button>
+    <div style="position:absolute;bottom:26px;font-size:10px;letter-spacing:.2em;color:#2f526e;">REV 2.0 · CINEMATIC EDITION</div>
+  </div>
+  </sc-if>
+
+  <!-- atmosphere -->
+  <div style="position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(120% 80% at 72% -10%,rgba(255,178,77,.08),transparent 52%),radial-gradient(110% 95% at 8% 110%,rgba(40,110,180,.18),transparent 60%);"></div>
+  <div style="position:fixed;top:-18%;left:50%;width:72vw;height:72vw;max-width:920px;max-height:920px;pointer-events:none;z-index:1;background:radial-gradient(circle,rgba(255,178,77,.16),transparent 62%);filter:blur(26px);animation:glowdrift 19s ease-in-out infinite;"></div>
+  <div style="position:fixed;bottom:-12%;right:-6%;width:58vw;height:58vw;max-width:760px;max-height:760px;pointer-events:none;z-index:1;background:radial-gradient(circle,rgba(60,130,200,.18),transparent 60%);filter:blur(32px);animation:glowdrift2 23s ease-in-out infinite;"></div>
+
+  <!-- vignette + letterbox -->
+  <div style="position:fixed;inset:0;pointer-events:none;z-index:55;background:radial-gradient(140% 110% at 50% 48%,transparent 56%,rgba(2,8,16,.42) 100%);"></div>
+  <div style="position:fixed;top:0;left:0;width:100%;height:38px;pointer-events:none;z-index:58;background:linear-gradient(to bottom,rgba(2,8,16,.85),transparent);"></div>
+  <div style="position:fixed;bottom:0;left:0;width:100%;height:52px;pointer-events:none;z-index:58;background:linear-gradient(to top,rgba(2,8,16,.85),transparent);"></div>
+  <div style="position:fixed;left:0;top:0;width:100%;height:140px;pointer-events:none;z-index:60;background:linear-gradient(to bottom,rgba(125,196,240,0) 0%,rgba(125,196,240,.05) 50%,rgba(125,196,240,0) 100%);animation:scanmove 11s linear infinite;"></div>
+
+  <!-- progress -->
+  <div style="position:fixed;left:0;top:0;width:100%;height:2px;z-index:70;background:rgba(125,196,240,.12);">
+    <div data-progress="1" style="height:100%;width:0%;background:#ffb24d;box-shadow:0 0 12px rgba(255,178,77,.7);"></div>
+  </div>
+
+  <!-- header -->
+  <header style="position:fixed;top:0;left:0;width:100%;z-index:65;display:flex;justify-content:space-between;align-items:center;padding:14px 24px;backdrop-filter:blur(8px);background:rgba(7,20,35,.55);border-bottom:1px solid rgba(125,196,240,.14);">
+    <div style="display:flex;align-items:center;gap:10px;font-size:12px;letter-spacing:.18em;color:#9cc2dd;">
+      <i class="ph-fill ph-broadcast" style="color:#ffb24d;font-size:18px;"></i>
+      <span style="color:#e8f3fb;font-weight:600;">RFID</span><span style="color:#4d7796;">// CINEMATIC</span>
+    </div>
+    <div style="display:flex;gap:18px;font-size:11px;letter-spacing:.16em;color:#4d7796;">
+      <a href="#how" style="color:#4d7796;text-decoration:none;">CARA KERJA</a>
+      <a href="#teardown" style="color:#4d7796;text-decoration:none;">BEDAH</a>
+      <a href="#apps" style="color:#ffb24d;text-decoration:none;">APLIKASI</a>
+    </div>
+  </header>
+
+  <!-- ============ SECTION 1 — HERO / CTA ============ -->
+  <section style="position:relative;min-height:100vh;display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));align-items:center;gap:24px;max-width:1320px;margin:0 auto;padding:110px 6vw 70px;z-index:5;">
+    <div style="position:relative;z-index:4;">
+      <div data-reveal="1" style="display:flex;align-items:center;gap:14px;font-size:12px;letter-spacing:.3em;color:#ffb24d;margin-bottom:26px;">
+        <span style="width:42px;height:1px;background:#ffb24d;display:inline-block;"></span>
+        RADIO-FREQUENCY IDENTIFICATION
+      </div>
+      <h1 data-reveal="1" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(58px,11vw,150px);line-height:.84;letter-spacing:-.03em;margin:0;color:#e8f3fb;">
+        R<span style="color:#ffb24d;">F</span>ID
+      </h1>
+      <p data-reveal="1" style="max-width:54ch;font-size:clamp(15px,1.5vw,19px);line-height:1.7;color:#bcd6ea;margin:26px 0 0;">
+        Teknologi yang memakai <strong style="color:#fff;">gelombang radio</strong> untuk mengenali objek dari jarak jauh — tanpa kontak, tanpa garis pandang. Sebuah <em style="color:#ffb24d;font-style:normal;">tag</em> menyimpan identitas, sebuah <em style="color:#ffb24d;font-style:normal;">reader</em> membacanya lewat udara dalam milidetik.
+      </p>
+      <div data-reveal="1" style="display:flex;gap:24px;margin-top:40px;flex-wrap:wrap;align-items:center;">
+        <a href="#teardown" style="text-decoration:none;display:inline-flex;align-items:center;gap:10px;background:#ffb24d;color:#071423;font-weight:600;font-size:13px;letter-spacing:.1em;padding:15px 26px;border-radius:2px;">
+          BEDAH KOMPONEN <i class="ph ph-arrow-down"></i>
+        </a>
+        <a href="#how" style="text-decoration:none;display:inline-flex;align-items:center;gap:10px;color:#bcd6ea;font-size:13px;letter-spacing:.1em;padding:14px 4px;border-bottom:1px solid rgba(125,196,240,.3);">
+          CARA KERJANYA <i class="ph ph-arrow-right"></i>
+        </a>
+      </div>
+      <div data-reveal="1" style="margin-top:42px;display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:.18em;color:#5d83a3;">
+        <i class="ph ph-hand-pointing" style="color:#ffb24d;font-size:16px;"></i> SERET MODEL UNTUK MEMUTAR →
+      </div>
+    </div>
+
+    <div style="position:relative;height:74vh;min-height:440px;">
+      <canvas ref="{{ heroRef }}" style="width:100%;height:100%;display:block;touch-action:none;cursor:grab;"></canvas>
+      <div style="position:absolute;left:0;bottom:8px;font-size:10px;letter-spacing:.2em;color:#4d7796;">FIG. 00 — PASSIVE INLAY · LIVE 3D</div>
+      <div style="position:absolute;right:0;top:8px;font-size:10px;letter-spacing:.18em;color:#ffb24d;display:flex;align-items:center;gap:6px;"><i class="ph ph-cube"></i> DRAG TO ROTATE</div>
+      <div style="position:absolute;left:0;top:0;width:14px;height:14px;border-left:1px solid rgba(125,196,240,.4);border-top:1px solid rgba(125,196,240,.4);"></div>
+      <div style="position:absolute;right:0;bottom:8px;width:14px;height:14px;border-right:1px solid rgba(125,196,240,.4);border-bottom:1px solid rgba(125,196,240,.4);"></div>
+    </div>
+
+    <div style="position:absolute;bottom:30px;left:6vw;display:flex;flex-direction:column;gap:10px;font-size:10px;letter-spacing:.24em;color:#7fa9c9;">
+      SCROLL
+      <span style="width:20px;height:32px;border:1px solid #7fa9c9;border-radius:12px;display:flex;justify-content:center;padding-top:6px;"><span style="width:3px;height:7px;background:#ffb24d;border-radius:2px;animation:scrolldot 1.6s ease-in-out infinite;"></span></span>
+    </div>
+  </section>
+
+  <!-- ============ SECTION 2 — HOW IT WORKS + BANDS ============ -->
+  <section id="how" style="position:relative;padding:100px 6vw;max-width:1320px;margin:0 auto;z-index:5;">
+    <div data-reveal="1" style="font-size:12px;letter-spacing:.3em;color:#ffb24d;margin-bottom:16px;">FIG. 01 — PRINCIPLE & BANDS</div>
+    <h2 data-reveal="1" style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(34px,5vw,60px);line-height:1.02;letter-spacing:-.02em;margin:0 0 18px;color:#e8f3fb;">Cara kerjanya</h2>
+    <p data-reveal="1" style="max-width:62ch;font-size:16px;line-height:1.7;color:#bcd6ea;margin:0 0 50px;">Reader memancarkan medan radio; antena tag menangkapnya untuk menyalakan chip, lalu memantulkan balik datanya. <strong style="color:#fff;">Frekuensi</strong> menentukan jangkauan dan kegunaannya — ganti pita di bawah untuk melihat perbedaannya secara langsung.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:26px;align-items:stretch;">
+      <!-- 3D wave sim -->
+      <div data-reveal="1" style="position:relative;border:1px solid rgba(125,196,240,.18);border-radius:8px;background:rgba(8,24,42,.55);overflow:hidden;min-height:430px;">
+        <canvas ref="{{ waveRef }}" style="width:100%;height:100%;display:block;position:absolute;inset:0;touch-action:none;cursor:grab;"></canvas>
+        <!-- range ruler overlay -->
+        <div style="position:absolute;left:0;top:0;right:0;padding:14px 18px 0;pointer-events:none;">
+          <div style="font-size:10px;letter-spacing:.2em;color:#7fa9c9;margin-bottom:10px;">{{ waveTopLabel }}</div>
+          <div style="position:relative;height:32px;margin:0 2px;">
+            <div style="position:absolute;top:8px;left:8%;right:8%;height:1px;border-top:1px dashed rgba(125,196,240,.35);"></div>
+            <div style="position:absolute;left:8%;top:0;display:flex;flex-direction:column;align-items:center;gap:2px;">
+              <div style="width:1px;height:14px;background:#ffb24d;"></div>
+              <span style="font-size:9px;letter-spacing:.1em;color:#ffb24d;white-space:nowrap;">READER · 0</span>
+            </div>
+            <div style="position:absolute;left:50%;top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px;">
+              <div style="width:1px;height:8px;background:rgba(125,196,240,.4);margin-top:3px;"></div>
+              <span style="font-size:9px;letter-spacing:.1em;color:#5d83a3;white-space:nowrap;">{{ bandData.rangeMid }}</span>
+            </div>
+            <div style="position:absolute;right:8%;top:0;display:flex;flex-direction:column;align-items:center;gap:2px;">
+              <div style="width:1px;height:14px;background:#7fc4f0;"></div>
+              <span style="font-size:9px;letter-spacing:.1em;color:#7fc4f0;white-space:nowrap;">{{ bandData.range }}</span>
+            </div>
+          </div>
+        </div>
+        <div style="position:absolute;right:16px;bottom:14px;font-size:10px;letter-spacing:.18em;color:#4d7796;pointer-events:none;display:flex;align-items:center;gap:6px;"><i class="ph ph-arrows-clockwise"></i> drag to orbit</div>
+        <div style="position:absolute;left:16px;bottom:14px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:34px;color:#ffb24d;pointer-events:none;letter-spacing:-.02em;">{{ bandData.abbr }}</div>
+      </div>
+
+      <!-- controls + explanation -->
+      <div data-reveal="1" style="display:flex;flex-direction:column;gap:20px;">
+        <div style="display:flex;gap:8px;">
+          <sc-for list="{{ bandTabs }}" as="t" hint-placeholder-count="3">
+            <button onClick="{{ t.onClick }}" style="flex:1;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;letter-spacing:.14em;padding:14px 8px;border-radius:3px;border:1px solid {{ t.bd }};background:{{ t.bg }};color:{{ t.fg }};transition:all .2s;">{{ t.abbr }}</button>
+          </sc-for>
+        </div>
+        <!-- passive / active mode toggle -->
+        <div style="display:flex;gap:8px;background:rgba(12,33,56,.5);border:1px solid rgba(125,196,240,.18);border-radius:6px;padding:6px;">
+          <sc-for list="{{ modeTabs }}" as="mt" hint-placeholder-count="2">
+            <button onClick="{{ mt.onClick }}" style="flex:1;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;letter-spacing:.1em;padding:11px 10px;border-radius:4px;border:1px solid {{ mt.bd }};background:{{ mt.bg }};color:{{ mt.fg }};transition:all .2s;">{{ mt.label }}</button>
+          </sc-for>
+        </div>
+
+        <div style="border:1px solid rgba(125,196,240,.18);border-radius:8px;background:rgba(12,33,56,.5);padding:28px 26px;flex:1;">
+          <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:700;color:#fff;letter-spacing:-.02em;">{{ bandData.freq }}</div>
+            <div style="font-size:12px;letter-spacing:.14em;color:#7fa9c9;">{{ bandData.full }}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;margin:22px 0;background:rgba(125,196,240,.14);border:1px solid rgba(125,196,240,.14);border-radius:6px;overflow:hidden;">
+            <div style="background:#0c2138;padding:16px 18px;">
+              <div style="font-size:10px;letter-spacing:.16em;color:#5d83a3;margin-bottom:6px;">JANGKAUAN BACA</div>
+              <div style="font-size:18px;color:#ffb24d;font-weight:600;">{{ bandData.range }}</div>
+            </div>
+            <div style="background:#0c2138;padding:16px 18px;">
+              <div style="font-size:10px;letter-spacing:.16em;color:#5d83a3;margin-bottom:6px;">PANJANG GELOMBANG</div>
+              <div style="font-size:18px;color:#7fc4f0;font-weight:600;">{{ bandData.wl }}</div>
+            </div>
+          </div>
+          <div style="margin-bottom:18px;">
+            <div style="font-size:11px;letter-spacing:.16em;color:#5d83a3;margin-bottom:8px;display:flex;align-items:center;gap:7px;"><i class="ph ph-target" style="color:#ffb24d;"></i>KEBUTUHAN</div>
+            <div style="font-size:14px;line-height:1.65;color:#cfe2f2;">{{ bandData.need }}</div>
+          </div>
+          <div>
+            <div style="font-size:11px;letter-spacing:.16em;color:#5d83a3;margin-bottom:8px;display:flex;align-items:center;gap:7px;"><i class="ph ph-tag" style="color:#ffb24d;"></i>PENGGUNAAN</div>
+            <div style="font-size:14px;line-height:1.65;color:#cfe2f2;">{{ bandData.use }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- principle steps -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;margin-top:30px;background:rgba(125,196,240,.14);border:1px solid rgba(125,196,240,.14);border-radius:6px;overflow:hidden;">
+      <sc-for list="{{ steps }}" as="step" hint-placeholder-count="4">
+        <div data-reveal="1" style="background:#0c2138;padding:24px 22px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:28px;color:#ffb24d;font-weight:700;margin-bottom:10px;">{{ step.n }}</div>
+          <div style="font-size:13px;line-height:1.6;color:#cfe2f2;">{{ step.t }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ============ SECTION 3 — TEARDOWN (scroll-scrubbed 3D) ============ -->
+  <section id="teardown" data-teardown="1" style="position:relative;height:560vh;z-index:5;">
+    <div style="position:sticky;top:0;height:100vh;overflow:hidden;">
+      <!-- full-bleed 3D, tag centered -->
+      <canvas ref="{{ teardownRef }}" style="position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;"></canvas>
+
+      <!-- top heading -->
+      <div style="position:absolute;top:88px;left:0;width:100%;text-align:center;pointer-events:none;z-index:4;">
+        <div style="font-size:12px;letter-spacing:.3em;color:#ffb24d;">FIG. 02 — BEDAH LAPISAN TAG RFID</div>
+        <div style="font-size:11px;letter-spacing:.2em;color:#4d7796;margin-top:8px;display:inline-flex;align-items:center;gap:7px;"><i class="ph ph-mouse-scroll"></i> SCROLL UNTUK ZOOM TIAP LAPISAN</div>
+      </div>
+
+      <!-- caption: changes per active layer (overlay, not a column) -->
+      <div style="position:absolute;left:0;bottom:0;width:100%;padding:0 6vw 64px;pointer-events:none;z-index:4;">
+        <div style="max-width:1320px;margin:0 auto;position:relative;min-height:230px;">
+          <sc-for list="{{ layers }}" as="L" hint-placeholder-count="4">
+            <div data-step="{{ L.i }}" style="position:absolute;left:0;bottom:0;max-width:540px;opacity:0;background:linear-gradient(90deg,rgba(7,20,35,.86),rgba(7,20,35,.35) 78%,transparent);padding:22px 26px;border-left:2px solid #ffb24d;border-radius:0 8px 8px 0;">
+              <div style="font-size:11px;letter-spacing:.24em;color:#7fa9c9;margin-bottom:10px;">{{ L.tag }}</div>
+              <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(30px,4vw,52px);line-height:1.02;letter-spacing:-.02em;margin:0;color:#fff;">{{ L.name }}</h2>
+              <div style="font-size:13px;letter-spacing:.12em;color:#ffb24d;margin:8px 0 14px;">{{ L.id }}</div>
+              <p style="font-size:14px;line-height:1.7;color:#cfe2f2;margin:0 0 16px;">{{ L.desc }}</p>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <span style="font-size:12px;color:#bcd6ea;border:1px solid rgba(125,196,240,.25);border-radius:2px;padding:7px 12px;">{{ L.a }}</span>
+                <span style="font-size:12px;color:#bcd6ea;border:1px solid rgba(125,196,240,.25);border-radius:2px;padding:7px 12px;">{{ L.b }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- vertical progress rail (top→bottom layers) -->
+      <div style="position:absolute;right:6vw;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;pointer-events:none;z-index:4;">
+        <div data-dot="0" style="width:3px;height:38px;border-radius:2px;background:rgba(125,196,240,.25);"></div>
+        <div data-dot="1" style="width:3px;height:38px;border-radius:2px;background:rgba(125,196,240,.25);"></div>
+        <div data-dot="2" style="width:3px;height:38px;border-radius:2px;background:rgba(125,196,240,.25);"></div>
+        <div data-dot="3" style="width:3px;height:38px;border-radius:2px;background:rgba(125,196,240,.25);"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SECTION 4 — APPLICATIONS ============ -->
+  <section id="apps" style="position:relative;padding:100px 6vw 70px;max-width:1320px;margin:0 auto;z-index:5;">
+    <div data-reveal="1" style="font-size:12px;letter-spacing:.3em;color:#ffb24d;margin-bottom:16px;">FIG. 03 — FIELD APPLICATIONS</div>
+    <h2 data-reveal="1" style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(34px,5vw,60px);line-height:1.02;letter-spacing:-.02em;margin:0 0 18px;color:#e8f3fb;">Pengaplikasiannya</h2>
+    <p data-reveal="1" style="max-width:60ch;font-size:16px;line-height:1.7;color:#bcd6ea;margin:0 0 48px;">RFID ada di sekitar kita setiap hari. Klik sebuah kartu untuk masuk ke <strong style="color:#fff;">simulasi denah 3D</strong> — lihat di mana tag dan reader bekerja.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;">
+      <sc-for list="{{ useCases }}" as="u" hint-placeholder-count="6">
+        <div onClick="{{ u.open }}" data-reveal="1" style="border:1px solid rgba(125,196,240,.18);border-radius:8px;background:rgba(12,33,56,.5);padding:28px 24px;position:relative;cursor:pointer;transition:border-color .25s,transform .25s,box-shadow .25s;" style-hover="border-color:#ffb24d;transform:translateY(-4px);box-shadow:0 14px 40px rgba(0,0,0,.4);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">
+            <i class="ph {{ u.icon }}" style="font-size:38px;color:#ffb24d;"></i>
+            <span style="font-size:10px;letter-spacing:.14em;color:#071423;background:#7fc4f0;padding:3px 8px;border-radius:2px;font-weight:600;">{{ u.band }}</span>
+          </div>
+          <h3 style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;margin:0 0 4px;color:#fff;">{{ u.title }}</h3>
+          <div style="font-size:12px;color:#ffb24d;letter-spacing:.06em;margin-bottom:12px;">{{ u.sub }}</div>
+          <p style="font-size:13px;line-height:1.65;color:#bcd6ea;margin:0 0 18px;">{{ u.desc }}</p>
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.14em;color:#7fc4f0;border-top:1px solid rgba(125,196,240,.14);padding-top:14px;">
+            <i class="ph ph-cube"></i> LIHAT SIMULASI 3D <i class="ph ph-arrow-right" style="margin-left:auto;"></i>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- footer -->
+  <footer style="position:relative;margin:40px auto 0;max-width:1320px;border-top:1px solid rgba(125,196,240,.18);z-index:5;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));">
+      <div style="padding:22px;border-right:1px solid rgba(125,196,240,.14);">
+        <div style="font-size:10px;letter-spacing:.16em;color:#4d7796;margin-bottom:6px;">TITLE</div>
+        <div style="font-size:13px;color:#e8f3fb;">RFID — Cinematic Edition</div>
+      </div>
+      <div style="padding:22px;border-right:1px solid rgba(125,196,240,.14);">
+        <div style="font-size:10px;letter-spacing:.16em;color:#4d7796;margin-bottom:6px;">SECTIONS</div>
+        <div style="font-size:13px;color:#e8f3fb;">CTA · Bands · Teardown · Apps</div>
+      </div>
+      <div style="padding:22px;border-right:1px solid rgba(125,196,240,.14);">
+        <div style="font-size:10px;letter-spacing:.16em;color:#4d7796;margin-bottom:6px;">RENDER</div>
+        <div style="font-size:13px;color:#e8f3fb;">WebGL · Real-time 3D</div>
+      </div>
+      <div style="padding:22px;">
+        <div style="font-size:10px;letter-spacing:.16em;color:#4d7796;margin-bottom:6px;">REV</div>
+        <div style="font-size:13px;color:#ffb24d;">2.0 — 2026</div>
+      </div>
+    </div>
+    <div style="text-align:center;padding:30px;font-size:11px;letter-spacing:.16em;color:#2f526e;">END OF SHEET · RADIO-FREQUENCY IDENTIFICATION</div>
+  </footer>
+
+  <!-- ============ MODAL — 3D plan simulation ============ -->
+  <sc-if value="{{ appOpen }}" hint-placeholder-val="{{ false }}">
+  <div data-modal style="position:fixed;inset:0;z-index:280;background:rgba(3,8,16,.94);backdrop-filter:blur(10px);display:flex;flex-direction:column;animation:modalin .3s ease both;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 26px;border-bottom:1px solid rgba(125,196,240,.16);">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <i class="ph {{ appData.icon }}" style="font-size:30px;color:#ffb24d;"></i>
+        <div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;color:#fff;">{{ appData.title }}</div>
+          <div style="font-size:11px;letter-spacing:.14em;color:#7fa9c9;">SIMULASI DENAH 3D · {{ appData.band }}</div>
+        </div>
+      </div>
+      <button onClick="{{ closeApp }}" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;background:transparent;border:1px solid rgba(125,196,240,.3);color:#bcd6ea;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.12em;padding:11px 16px;border-radius:3px;">TUTUP <i class="ph ph-x"></i></button>
+    </div>
+    <div style="position:relative;flex:1;min-height:0;">
+      <canvas ref="{{ planRef }}" style="width:100%;height:100%;display:block;touch-action:none;cursor:grab;"></canvas>
+      <div style="position:absolute;left:24px;bottom:24px;max-width:440px;border-left:2px solid #ffb24d;padding:6px 0 6px 16px;pointer-events:none;">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;color:#fff;margin-bottom:6px;">{{ appData.planTitle }}</div>
+        <div style="font-size:13px;line-height:1.6;color:#cfe2f2;">{{ appData.planDesc }}</div>
+      </div>
+      <div style="position:absolute;right:24px;top:20px;display:flex;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none;width:min(280px,46vw);">
+        <div style="border:1px solid rgba(255,178,77,.4);background:rgba(255,178,77,.08);border-radius:4px;padding:10px 16px;text-align:right;width:100%;">
+          <div data-readlabel style="font-size:10px;letter-spacing:.16em;color:#ffcf8f;">TAG TERBACA</div>
+          <div data-readcount style="font-family:'Space Grotesk',sans-serif;font-size:34px;font-weight:700;color:#ffb24d;line-height:1;">0</div>
+        </div>
+        <div data-readlog style="width:100%;display:flex;flex-direction:column;gap:5px;max-height:46vh;overflow:hidden;"></div>
+      </div>
+      <div style="position:absolute;right:24px;bottom:24px;font-size:10px;letter-spacing:.16em;color:#4d7796;pointer-events:none;display:flex;align-items:center;gap:7px;"><i class="ph ph-arrows-clockwise"></i> SERET UNTUK MEMUTAR DENAH</div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.rootRef = React.createRef();
+    this.heroRef = React.createRef();
+    this.waveRef = React.createRef();
+    this.teardownRef = React.createRef();
+    this.planRef = React.createRef();
+    this.state = { showSplash:true, band:'UHF', openApp:null, waveMode:'passive' };
+    this._prevOpenApp = null;
+    this._scenes = [];
+    this._cleanups = [];
+  }
+
+  // ---------- data ----------
+  get steps(){
+    return [
+      { n:'01', t:'Reader memancarkan gelombang radio terus-menerus ke sekitarnya.' },
+      { n:'02', t:'Antena tag menangkap gelombang itu dan mengubahnya jadi listrik untuk menyalakan chip — tanpa baterai.' },
+      { n:'03', t:'Chip aktif lalu mengirim balik nomor ID-nya dengan memantulkan sinyal (backscatter).' },
+      { n:'04', t:'Reader menangkap ID tersebut dan meneruskannya ke sistem untuk diproses.' },
+    ];
+  }
+  get bandInfo(){
+    return {
+      LF:{ abbr:'LF', full:'LOW FREQUENCY', freq:'125–134 kHz', range:'± 10 cm', rangeMid:'5 cm', wl:'~2.400 m',
+        need:'Tahan terhadap air dan logam, tidak butuh jangkauan jauh, dan harus sangat andal di lingkungan menantang.',
+        use:'Microchip hewan, immobilizer kunci mobil, dan kartu akses generasi awal.' },
+      HF:{ abbr:'HF', full:'HIGH FREQUENCY', freq:'13,56 MHz', range:'± 1 m', rangeMid:'50 cm', wl:'~22 m',
+        need:'Tap jarak dekat yang aman, cocok untuk transaksi dan identitas yang butuh privasi.',
+        use:'Kartu akses, NFC pembayaran, e-KTP, tiket, dan sistem perpustakaan.' },
+      UHF:{ abbr:'UHF', full:'ULTRA-HIGH FREQUENCY', freq:'860–960 MHz', range:'± 12 m', rangeMid:'6 m', wl:'~33 cm',
+        need:'Membaca ratusan tag sekaligus, cepat, dan dari jarak jauh untuk volume tinggi.',
+        use:'Retail & inventaris, logistik, rantai pasok, dan e-Toll.' },
+    };
+  }
+  get layers(){
+    return [
+      { i:'0', tag:'LAYER 01 / 04', name:'Substrate', id:'LAPISAN DASAR', desc:'Lapisan dasar dari film PET atau kertas. Inilah fondasi tempat antena dan chip dipasang — memberi bentuk fisik dan kekuatan.', a:'Bahan · PET / kertas', b:'Tebal · 25–50 µm' },
+      { i:'1', tag:'LAYER 02 / 04', name:'Antenna', id:'ANTENA KUMPARAN', desc:'Kumparan logam yang menangkap gelombang reader untuk memberi daya ke chip, lalu memancarkan balik datanya. Bentuknya menentukan frekuensi kerja.', a:'Bahan · Tembaga / aluminium', b:'Bentuk · Coil / dipole' },
+      { i:'2', tag:'LAYER 03 / 04', name:'Microchip', id:'OTAK TAG · IC', desc:'Otak dari tag. Menyimpan nomor identitas unik (UID/EPC) dan mengatur seluruh komunikasi. Ukurannya bisa lebih kecil dari sebutir pasir.', a:'Ukuran · 0,3–0,5 mm', b:'Daya · dari medan RF' },
+      { i:'3', tag:'LAYER 04 / 04', name:'Casing', id:'PELINDUNG · LAMINATE', desc:'Lapisan laminasi pelindung yang membungkus seluruh inlay. Membuat tag tahan air dan goresan, sekaligus jadi permukaan label.', a:'Bahan · PET / PVC', b:'Fungsi · Proteksi & label' },
+    ];
+  }
+  get useCases(){
+    return [
+      { icon:'ph-storefront', band:'UHF', plan:'warehouse', title:'Retail & Inventory', sub:'Pelacakan stok otomatis', desc:'Ribuan barang dibaca sekaligus tanpa scan satu per satu — stok real-time, kehilangan barang berkurang.', planTitle:'Gudang ritel', planDesc:'Setiap pallet melewati gerbang dock; reader UHF di portal membaca semua tag sekaligus saat lewat.' },
+      { icon:'ph-road-horizon', band:'UHF', plan:'toll', title:'e-Toll & Transport', sub:'Bayar tanpa berhenti', desc:'Tag di kendaraan dibaca saat melintas gantry, transaksi otomatis tanpa antre.', planTitle:'Gerbang tol', planDesc:'Gantry di atas jalur memancarkan medan UHF; tag di kaca mobil terbaca dan palang terangkat otomatis.' },
+      { icon:'ph-identification-badge', band:'HF', plan:'gate', title:'Akses & Identitas', sub:'Kartu masuk gedung', desc:'Tap kartu untuk membuka pintu, absensi, dan identifikasi karyawan secara aman.', planTitle:'Pintu akses', planDesc:'Reader HF di samping pintu membaca kartu saat ditap dari dekat, lalu daun pintu terbuka.' },
+      { icon:'ph-truck', band:'UHF', plan:'logistics', title:'Logistik & Supply Chain', sub:'Pelacakan pengiriman', desc:'Palet dan kontainer dilacak di gudang serta jalur distribusi untuk visibilitas penuh.', planTitle:'Dok pengiriman', planDesc:'Kotak berjalan di konveyor melewati portal reader menuju truk; tiap kotak terbaca otomatis saat dimuat.' },
+      { icon:'ph-books', band:'HF', plan:'library', title:'Perpustakaan', sub:'Manajemen buku', desc:'Peminjaman mandiri, inventarisasi rak yang cepat, dan gerbang anti-pencurian.', planTitle:'Gerbang perpustakaan', planDesc:'Tumpukan buku melewati gerbang keluar di antara rak; tag HF tiap buku terbaca untuk dicatat.' },
+      { icon:'ph-paw-print', band:'LF', plan:'livestock', title:'Hewan & Ternak', sub:'Microchip identitas', desc:'Microchip seukuran beras ditanam untuk identifikasi hewan peliharaan dan ternak.', planTitle:'Kandang ternak', planDesc:'Tiap hewan mendekati tiang pemindai LF di gerbang kandang dari jarak sangat dekat; microchip-nya langsung terbaca.' },
+    ];
+  }
+
+  // ---------- lifecycle ----------
+  componentDidMount(){ this._mounted=true; this._boot(0); }
+  _boot(n){
+    if(window.THREE && window.gsap && this.rootRef.current && this.heroRef.current){ this._setup(); }
+    else if(n<400 && this._mounted){ this._t=setTimeout(()=>this._boot(n+1), 50); }
+  }
+
+  componentDidUpdate(){
+    const prev = this._prevOpenApp;
+    const cur = this.state.openApp;
+    if(prev===cur) return;
+    this._prevOpenApp = cur;
+    if(prev==null && cur!=null){
+      if(window.__rfidLenis) window.__rfidLenis.stop();
+      this._disposePlan();
+      this._planT = setTimeout(()=>this._initPlan(this.useCases[cur].plan), 70);
+    } else if(prev!=null && cur==null){
+      if(window.__rfidLenis) window.__rfidLenis.start();
+      this._disposePlan();
+    } else if(prev!=null && cur!=null){
+      // switched directly between cards
+      if(window.__rfidLenis) window.__rfidLenis.stop();
+      this._disposePlan();
+      this._planT = setTimeout(()=>this._initPlan(this.useCases[cur].plan), 70);
+    }
+  }
+
+  componentWillUnmount(){
+    this._mounted=false; this._running=false;
+    if(this._t) clearTimeout(this._t);
+    if(this._planT) clearTimeout(this._planT);
+    if(this._io) try{ this._io.disconnect(); }catch(e){}
+    this._cleanups.forEach(fn=>{ try{ fn(); }catch(e){} });
+    const reg = window.__rfidScenes || [];
+    this._scenes.forEach(s=>{ const i=reg.indexOf(s); if(i>=0) reg.splice(i,1); try{ s.renderer && s.renderer.dispose(); }catch(e){} });
+    this._disposePlan();
+  }
+
+  // ---------- three helpers ----------
+  _mkRenderer(canvas){
+    const r = new window.THREE.WebGLRenderer({ canvas, alpha:true, antialias:true });
+    r.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
+    return r;
+  }
+  _fit(r, cam, canvas){
+    const w = canvas.clientWidth || canvas.parentElement.clientWidth;
+    const h = canvas.clientHeight || canvas.parentElement.clientHeight;
+    if(!w || !h) return;
+    r.setSize(w, h, false); cam.aspect = w/h; cam.updateProjectionMatrix();
+  }
+  _watchSize(r, cam, canvas){
+    const fit = ()=>this._fit(r, cam, canvas);
+    const ro = new ResizeObserver(fit); ro.observe(canvas); setTimeout(fit, 30); fit();
+    this._cleanups.push(()=>ro.disconnect());
+  }
+  _lights(scene){
+    const THREE = window.THREE;
+    scene.add(new THREE.AmbientLight(0x88aacc, 0.55));
+    const key = new THREE.DirectionalLight(0xffd9a0, 1.05); key.position.set(4,7,5); scene.add(key);
+    const rim = new THREE.DirectionalLight(0x5a9bd6, 0.6); rim.position.set(-5,2,-4); scene.add(rim);
+  }
+  _roundedRectCurve(w, h, r){
+    const THREE = window.THREE;
+    const s = new THREE.Shape();
+    const x=-w/2, y=-h/2;
+    s.moveTo(x+r, y);
+    s.lineTo(x+w-r, y); s.absarc(x+w-r, y+r, r, -Math.PI/2, 0);
+    s.lineTo(x+w, y+h-r); s.absarc(x+w-r, y+h-r, r, 0, Math.PI/2);
+    s.lineTo(x+r, y+h); s.absarc(x+r, y+h-r, r, Math.PI/2, Math.PI);
+    s.lineTo(x, y+r); s.absarc(x+r, y+r, r, Math.PI, Math.PI*1.5);
+    const pts = s.getPoints(80).map(p=>new THREE.Vector3(p.x, p.y, 0));
+    return new THREE.CatmullRomCurve3(pts, true);
+  }
+  _buildTag(){
+    const THREE = window.THREE;
+    const matNavy = new THREE.MeshStandardMaterial({ color:0x0e2840, metalness:.2, roughness:.65, transparent:true, opacity:.95 });
+    const matGold = new THREE.MeshStandardMaterial({ color:0xffb24d, emissive:0xffb24d, emissiveIntensity:.32, metalness:.55, roughness:.35 });
+    const matChip = new THREE.MeshStandardMaterial({ color:0xffc46b, emissive:0xffb24d, emissiveIntensity:.7, metalness:.7, roughness:.25 });
+    const matGlass = new THREE.MeshStandardMaterial({ color:0xe8f3fb, metalness:.1, roughness:.12, transparent:true, opacity:.13 });
+
+    const group = new THREE.Group();
+    // substrate
+    const substrate = new THREE.Mesh(new THREE.BoxGeometry(3.0, 1.9, 0.07), matNavy);
+    group.add(substrate);
+    // antenna — nested rounded-rect tube loops
+    const antenna = new THREE.Group();
+    for(let i=0;i<5;i++){
+      const curve = this._roundedRectCurve(2.55 - i*0.32, 1.5 - i*0.2, 0.2);
+      const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 130, 0.018, 8, true), matGold);
+      antenna.add(tube);
+    }
+    antenna.position.z = 0.07;
+    group.add(antenna);
+    // chip
+    const chip = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, 0.13), matChip);
+    chip.position.set(0, 0, 0.13);
+    group.add(chip);
+    // casing
+    const casing = new THREE.Mesh(new THREE.BoxGeometry(3.12, 2.02, 0.1), matGlass);
+    casing.position.z = 0.18;
+    group.add(casing);
+
+    return { group, substrate, antenna, chip, casing };
+  }
+
+  _dragRotate(canvas, obj){
+    const st = { down:false, px:0, py:0, vx:0, vy:0, rx:obj.rotation.x, ry:obj.rotation.y };
+    const xy = e => e.touches ? [e.touches[0].clientX, e.touches[0].clientY] : [e.clientX, e.clientY];
+    const down = e => { st.down=true; const p=xy(e); st.px=p[0]; st.py=p[1]; canvas.style.cursor='grabbing'; };
+    const move = e => { if(!st.down) return; const p=xy(e); const dx=p[0]-st.px, dy=p[1]-st.py; st.px=p[0]; st.py=p[1]; st.ry+=dx*0.008; st.rx+=dy*0.008; st.rx=Math.max(-1.2,Math.min(1.2,st.rx)); st.vx=dx*0.008; st.vy=dy*0.008; };
+    const up = () => { st.down=false; canvas.style.cursor='grab'; };
+    canvas.addEventListener('pointerdown', down); window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+    this._cleanups.push(()=>{ canvas.removeEventListener('pointerdown',down); window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up); });
+    st.apply = () => {
+      if(!st.down){ st.ry += 0.004 + st.vx; st.rx += st.vy; st.vx*=0.93; st.vy*=0.93; if(st.rx>0) st.rx*=0.99; else st.rx*=0.99; }
+      obj.rotation.x += (st.rx - obj.rotation.x)*0.12;
+      obj.rotation.y += (st.ry - obj.rotation.y)*0.12;
+    };
+    return st;
+  }
+
+  _orbit(canvas, cam, target, o){
+    const st = { az:o.az, pol:o.pol, r:o.r, down:false, px:0, py:0, va:0, vp:0, auto:(o.auto==null?0.0016:o.auto) };
+    const xy = e => e.touches ? [e.touches[0].clientX, e.touches[0].clientY] : [e.clientX, e.clientY];
+    const down = e => { st.down=true; const p=xy(e); st.px=p[0]; st.py=p[1]; canvas.style.cursor='grabbing'; };
+    const move = e => { if(!st.down) return; const p=xy(e); const dx=p[0]-st.px, dy=p[1]-st.py; st.px=p[0]; st.py=p[1]; st.az-=dx*0.006; st.pol-=dy*0.005; st.va=-dx*0.006; st.vp=-dy*0.005; };
+    const up = () => { st.down=false; canvas.style.cursor='grab'; };
+    canvas.addEventListener('pointerdown', down); window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+    this._cleanups.push(()=>{ canvas.removeEventListener('pointerdown',down); window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up); });
+    st.apply = () => {
+      if(!st.down){ st.az += st.auto + st.va; st.va*=0.92; st.pol += st.vp; st.vp*=0.9; }
+      st.pol = Math.max(0.25, Math.min(1.45, st.pol));
+      cam.position.set(
+        target.x + st.r*Math.sin(st.pol)*Math.sin(st.az),
+        target.y + st.r*Math.cos(st.pol),
+        target.z + st.r*Math.sin(st.pol)*Math.cos(st.az)
+      );
+      cam.lookAt(target);
+    };
+    return st;
+  }
+
+  _addScene(s, always){
+    s.visible = !!always;
+    s.autoVis = !always;     // viewport-checked each frame (no IntersectionObserver dependency)
+    this._scenes.push(s);
+    // register in a single global loop, deduped by canvas (survives remounts)
+    const reg = (window.__rfidScenes = window.__rfidScenes || []);
+    for(let i=reg.length-1;i>=0;i--){ if(reg[i].canvas===s.canvas){ try{ reg[i].renderer && reg[i].renderer.dispose && reg[i].renderer.dispose(); }catch(e){} reg.splice(i,1); } }
+    reg.push(s);
+    this._startLoop();
+    return s;
+  }
+  _startLoop(){
+    if(window.__rfidLoopRunning) return;   // one global chain only
+    window.__rfidLoopRunning = true;
+    let last = performance.now();
+    let lastFrame = 0;
+    const frame = (now) => {
+      let dt = (now-last)/1000; if(!(dt>0)||dt>0.05) dt = 0.016; last = now; lastFrame = now;
+      const reg = window.__rfidScenes || [];
+      for(let i=reg.length-1;i>=0;i--){
+        const s = reg[i];
+        if(!s.canvas || !document.contains(s.canvas)){ try{ s.renderer && s.renderer.dispose && s.renderer.dispose(); }catch(e){} reg.splice(i,1); continue; }
+        if(s.autoVis){ const r=s.canvas.getBoundingClientRect(); s.visible = r.bottom>-160 && r.top<(window.innerHeight+160) && r.width>0; }
+        if(s.visible){ try{ s.render(dt, now); }catch(e){} }
+      }
+    };
+    const raf = () => { frame(performance.now()); requestAnimationFrame(raf); };
+    requestAnimationFrame(raf);
+    // fallback driver: keeps animating when rAF is throttled/paused (background or non-painted contexts)
+    setInterval(()=>{ const now=performance.now(); if(now-lastFrame > 180) frame(now); }, 60);
+  }
+
+  // ---------- setup ----------
+  _setup(){
+    const g = window.gsap, root = this.rootRef.current;
+
+    if(window.Lenis && !window.__rfidLenis){
+      const lenis = new window.Lenis({ duration:1.15, smoothWheel:true, wheelMultiplier:0.9 });
+      window.__rfidLenis = lenis;
+      const raf = t => { lenis.raf(t); requestAnimationFrame(raf); };
+      requestAnimationFrame(raf);
+    }
+
+    // reveals
+    const io = new IntersectionObserver(es=>{ es.forEach(e=>{ if(e.isIntersecting){ e.target.style.opacity='1'; e.target.style.transform='none'; io.unobserve(e.target); } }); }, { rootMargin:'0px 0px -10% 0px' });
+    root.querySelectorAll('[data-reveal]').forEach(el=>{ el.style.opacity='0'; el.style.transform='translateY(26px)'; el.style.transition='opacity .7s cubic-bezier(.22,1,.36,1), transform .7s cubic-bezier(.22,1,.36,1)'; io.observe(el); });
+    this._io = io;
+
+    // progress bar
+    const bar = root.querySelector('[data-progress]');
+    if(bar){ const upd = ()=>{ const sy=window.scrollY||0; const h=(document.documentElement.scrollHeight-window.innerHeight)||1; bar.style.width=Math.max(0,Math.min(100,sy/h*100))+'%'; }; window.addEventListener('scroll',upd,{passive:true}); upd(); this._cleanups.push(()=>window.removeEventListener('scroll',upd)); }
+
+    this._initHero();
+    this._initWave();
+    this._initTeardown();
+  }
+
+  _initHero(){
+    const THREE = window.THREE, canvas = this.heroRef.current; if(!canvas) return;
+    const scene = new THREE.Scene();
+    const cam = new THREE.PerspectiveCamera(34, 1, 0.1, 100); cam.position.set(0, 0.3, 7.2);
+    this._lights(scene);
+    const tag = this._buildTag();
+    tag.group.rotation.set(-0.5, 0.6, 0.08);
+    scene.add(tag.group);
+    const r = this._mkRenderer(canvas);
+    this._watchSize(r, cam, canvas);
+    const drag = this._dragRotate(canvas, tag.group);
+    this._addScene({ canvas, renderer:r, render:(dt,now)=>{
+      drag.apply();
+      tag.chip.material.emissiveIntensity = 0.5 + Math.sin(now*0.005)*0.35;
+      r.render(scene, cam);
+    }});
+  }
+
+  _initWave(){
+    const THREE = window.THREE, canvas = this.waveRef.current; if(!canvas) return;
+    const scene = new THREE.Scene();
+    const cam = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+    this._lights(scene);
+    const orbit = this._orbit(canvas, cam, new THREE.Vector3(0,0.2,0), { az:0.95, pol:0.72, r:15.5, auto:0.0010 });
+
+    // wavelength = ripple spacing, speed = travel speed, dist = reader↔tag gap, amp = crest height
+    const CFG = {
+      LF:{ wl:2.7, speed:1.4, dist:4.4, amp:0.62, cr:0.56,cg:0.75,cb:0.90 },
+      HF:{ wl:1.5, speed:2.3, dist:6.0, amp:0.46, cr:0.66,cg:0.83,cb:1.00 },
+      UHF:{ wl:0.72, speed:3.6, dist:8.0, amp:0.32, cr:1.00,cg:0.70,cb:0.30 },
+    };
+    this._waveCFG = CFG;
+    const cfg = Object.assign({}, CFG[this.state.band]);
+    cfg.mode = this.state.waveMode;
+    this._cfg = cfg;
+
+    // ---- water surface (ripple field) ----
+    const W = 20, D = 12, SX = 130, SZ = 80;
+    const geo = new THREE.PlaneGeometry(W, D, SX, SZ);
+    geo.rotateX(-Math.PI/2); // flat, y is height
+    const vcount = geo.attributes.position.count;
+    geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(vcount*3), 3));
+    const mat = new THREE.MeshBasicMaterial({ wireframe:true, vertexColors:true, transparent:true, opacity:0.92 });
+    const water = new THREE.Mesh(geo, mat);
+    scene.add(water);
+    // faint solid underlay so it reads as a surface
+    const under = new THREE.Mesh(new THREE.PlaneGeometry(W, D), new THREE.MeshBasicMaterial({ color:0x081a2e, transparent:true, opacity:0.55 }));
+    under.rotation.x = -Math.PI/2; under.position.y = -0.04; scene.add(under);
+
+    const pos = geo.attributes.position, col = geo.attributes.color;
+    const px = new Float32Array(vcount), pz = new Float32Array(vcount);
+    for(let i=0;i<vcount;i++){ px[i]=pos.getX(i); pz[i]=pos.getZ(i); }
+
+    // ---- reader (emitter) ----
+    const reader = new THREE.Group();
+    reader.add(new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.7, 1.1), new THREE.MeshStandardMaterial({ color:0x16314e, metalness:.4, roughness:.5 })));
+    const face = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.25, 0.8), new THREE.MeshStandardMaterial({ color:0x7fc4f0, emissive:0x3a7fb5, emissiveIntensity:.6, metalness:.3, roughness:.4 }));
+    face.position.x = 0.28; reader.add(face);
+    reader.position.set(-cfg.dist/2, 0.85, 0); scene.add(reader);
+    // ---- tag (responder) ----
+    const tag = this._buildTag();
+    tag.group.scale.setScalar(0.34);
+    tag.group.rotation.set(0, -Math.PI/2, 0);
+    tag.group.position.set(cfg.dist/2, 0.5, 0); scene.add(tag.group);
+    // little stand posts
+    const postMat = new THREE.MeshStandardMaterial({ color:0x16314e, roughness:.6 });
+
+    this._wave = { reader, tag, cfg };
+    const r = this._mkRenderer(canvas);
+    this._watchSize(r, cam, canvas);
+
+    this._addScene({ canvas, renderer:r, render:(dt,now)=>{
+      orbit.apply();
+      const t = now*0.001;
+      const k = 6.2831853/cfg.wl;
+      const ws = cfg.speed * 2.2;
+      const ax = -cfg.dist/2, bx = cfg.dist/2;
+      const amp = cfg.amp;
+      const isActive = cfg.mode === 'active';
+      const dr=0.03,dg=0.10,db=0.18;
+      const cr=cfg.cr,cg=cfg.cg,cb=cfg.cb;
+      // ---- glow reader/tag models based on mode ----
+      if(reader.children[1]){ const m=reader.children[1].material; m.emissiveIntensity = isActive ? 0.18 : 0.6+Math.sin(t*cfg.speed*3)*0.3; }
+      tag.chip.material.emissiveIntensity = isActive ? 1.0+Math.sin(t*5)*0.5 : 0.35+Math.sin(t*4)*0.25;
+      for(let i=0;i<vcount;i++){
+        const x=px[i], z=pz[i];
+        const dA=Math.sqrt((x-ax)*(x-ax)+z*z);
+        const dB=Math.sqrt((x-bx)*(x-bx)+z*z);
+        const fA=Math.exp(-dA*0.14);
+        const fB=Math.exp(-dB*0.16);
+        let h;
+        if(!isActive){
+          // PASSIVE: reader emits → rings travel to tag → tag reflects back (phase-delayed)
+          h = amp*Math.sin(k*dA - ws*t)*fA + amp*0.6*Math.sin(k*dB - ws*t + k*cfg.dist)*fB;
+        } else {
+          // ACTIVE: reader AND tag both emit simultaneously
+          h = amp*Math.sin(k*dA - ws*t)*fA + amp*Math.sin(k*dB - ws*t)*fB;
+        }
+        pos.setY(i, h);
+        let n = h/amp*0.5+0.5; n = n<0?0:(n>1?1:n);
+        col.setXYZ(i, dr+(cr-dr)*n, dg+(cg-dg)*n, db+(cb-db)*n);
+      }
+      pos.needsUpdate = true; col.needsUpdate = true;
+      // bob the reader/tag slightly with the surface
+      reader.position.x = ax; tag.group.position.x = bx;
+      tag.chip.material.emissiveIntensity = 0.5 + Math.sin(now*0.006)*0.4;
+      tag.group.rotation.z = Math.sin(now*0.0009)*0.12;
+      r.render(scene, cam);
+    }});
+  }
+
+  _setWaveMode(m){
+    this.setState({ waveMode:m });
+    if(this._cfg) this._cfg.mode = m;
+  }
+
+  _setBand(b){
+    this.setState({ band:b });
+    if(!this._cfg || !this._waveCFG || !window.gsap) return;
+    const target = this._waveCFG[b];
+    window.gsap.to(this._cfg, { wl:target.wl, speed:target.speed, dist:target.dist, amp:target.amp, cr:target.cr, cg:target.cg, cb:target.cb, duration:1.0, ease:'power2.inOut' });
+    this._cfg.mode = this.state.waveMode;
+  }
+
+  _initTeardown(){
+    const THREE = window.THREE, canvas = this.teardownRef.current, root = this.rootRef.current; if(!canvas) return;
+    const section = root.querySelector('[data-teardown]');
+    const scene = new THREE.Scene();
+    const cam = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    this._lights(scene);
+    const tag = this._buildTag();
+    // lay the plates flat & stack them vertically (burger): local +z → world +y
+    tag.group.rotation.set(-Math.PI/2, 0, 0);
+    tag.group.scale.setScalar(1.45);
+    scene.add(tag.group);
+
+    const goldMat = tag.antenna.children[0] && tag.antenna.children[0].material;
+    // layer 0 (substrate) sits at TOP, layer 3 (casing) at the BOTTOM → scroll reads top→down
+    const parts = [
+      { node:tag.substrate, mats:[tag.substrate.material] },
+      { node:tag.antenna,   mats:[goldMat] },
+      { node:tag.chip,      mats:[tag.chip.material] },
+      { node:tag.casing,    mats:[tag.casing.material] },
+    ];
+    parts.forEach(P=>P.mats.forEach(m=>{ if(m){ m.transparent=true; if(m.opacity==null) m.opacity=1; } }));
+    const GAP = 1.5;                  // vertical gap between plates once exploded
+    const topZ = i => (3 - i) * GAP;  // local-z target after spread (layer 0 highest)
+    const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+    const stepEls = [0,1,2,3].map(i=>root.querySelector('[data-step="'+i+'"]'));
+    const dotEls  = [0,1,2,3].map(i=>root.querySelector('[data-dot="'+i+'"]'));
+
+    const r = this._mkRenderer(canvas);
+    this._watchSize(r, cam, canvas);
+    let lastActive = -1, prog = 0;
+
+    this._addScene({ canvas, renderer:r, render:(dt,now)=>{
+      const total = (section.offsetHeight - window.innerHeight) || 1;
+      const p = clamp((-section.getBoundingClientRect().top)/total, 0, 1);
+      prog += (p - prog) * 0.10;                 // smoothed scroll
+      const sp = clamp(prog/0.14, 0, 1);         // 0→1 spread over first 14% (assembled first)
+      const active = clamp(Math.round(prog*3), 0, 3);
+
+      // stack plates vertically; emphasize active layer
+      parts.forEach((P,i)=>{
+        const isA = i===active;
+        const tz = topZ(i)*sp + (isA ? 0.35 : 0);
+        P.node.position.z += (tz - P.node.position.z) * 0.14;
+        const tOp = (sp<0.5) ? 1 : (isA ? (i===3?0.5:1) : 0.16);
+        P.mats.forEach(m=>{ if(m) m.opacity += (tOp - m.opacity) * 0.14; });
+      });
+      tag.chip.material.emissiveIntensity = (active===2?1.2:0.4) + Math.sin(now*0.005)*0.25;
+      goldMat && (goldMat.emissiveIntensity = (active===1?0.75:0.25));
+
+      // camera: pan DOWN through the stack while zooming in once spread
+      const panP = clamp((prog-0.14)/0.86, 0, 1);
+      const focusY = topZ(active);                                  // world-Y of active plate
+      const tgtY   = (3*GAP*sp*0.5) * (1-panP) + (topZ(0) + (topZ(3)-topZ(0))*panP) * panP; // center→travel
+      const aimY   = (panP<0.02) ? (1.5*GAP*sp) : focusY;           // settle on active plate
+      const dist   = 8.4 - sp*3.3;                                  // zoom in after spread
+      cam.position.set(dist*0.42, aimY + dist*0.46, dist*0.92);
+      cam.lookAt(0, aimY, 0);
+      tag.group.rotation.z += (0.0009);                            // slow auto spin for life
+
+      if(active!==lastActive){
+        lastActive = active;
+        stepEls.forEach((el,i)=>{ if(el){ el.style.transition='opacity .45s, transform .45s'; el.style.opacity = i===active?'1':'0'; el.style.transform = i===active?'none':'translateY(18px)'; } });
+        dotEls.forEach((el,i)=>{ if(el) el.style.background = i===active ? '#ffb24d' : 'rgba(125,196,240,.25)'; });
+      }
+      r.render(scene, cam);
+    }});
+  }
+
+  // ---------- plan / modal ----------
+  _initPlan(plan){
+    const THREE = window.THREE, canvas = this.planRef.current;
+    if(!canvas){ if(this.state.openApp!=null){ this._planT=setTimeout(()=>this._initPlan(plan), 60); } return; }
+    const scene = new THREE.Scene();
+    const cam = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+    this._lights(scene);
+    const pt = new THREE.PointLight(0xffb24d, 0.5, 40); pt.position.set(0,6,2); scene.add(pt);
+
+    // floor
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(40,40), new THREE.MeshStandardMaterial({ color:0x081726, roughness:.95, metalness:.05 }));
+    floor.rotation.x = -Math.PI/2; scene.add(floor);
+    const grid = new THREE.GridHelper(40, 40, 0x2f6da0, 0x16314a); grid.position.y=0.01; scene.add(grid);
+
+    this._readCount = 0;
+    const setCount = ()=>{ const el=document.querySelector('[data-readcount]'); if(el) el.textContent=String(this._readCount); };
+    setCount();
+    { const _lg=document.querySelector('[data-readlog]'); if(_lg) _lg.innerHTML=''; }
+    // HUD helpers — label + live event log (for named IDs, granted/denied, stock, etc.)
+    const setLabel = (t)=>{ const el=document.querySelector('[data-readlabel]'); if(el) el.textContent=t; };
+    const logEvent = (text, color)=>{
+      const box=document.querySelector('[data-readlog]'); if(!box) return;
+      const row=document.createElement('div');
+      row.style.cssText='font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.04em;color:'+(color||'#cfe2f2')+';background:rgba(8,24,42,.72);border:1px solid rgba(125,196,240,.18);border-left:2px solid '+(color||'#ffb24d')+';border-radius:3px;padding:6px 10px;text-align:left;opacity:0;transform:translateX(10px);transition:opacity .3s,transform .3s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+      row.textContent=text;
+      box.insertBefore(row, box.firstChild);
+      requestAnimationFrame(()=>{ row.style.opacity='1'; row.style.transform='none'; });
+      while(box.children.length>9){ box.removeChild(box.lastChild); }
+    };
+
+    const shelfMat = new THREE.MeshStandardMaterial({ color:0x16314e, roughness:.7, metalness:.25 });
+    const tagMat = ()=> new THREE.MeshStandardMaterial({ color:0xffb24d, emissive:0xffb24d, emissiveIntensity:.85, metalness:.4, roughness:.3 });
+    const boxMat = (c)=> new THREE.MeshStandardMaterial({ color:c, roughness:.85, metalness:.1 });
+
+    const portal = (z0,z1,h,col)=>{
+      const grp = new THREE.Group();
+      [z0,z1].forEach(z=>{ const post=new THREE.Mesh(new THREE.BoxGeometry(0.2,h,0.2), shelfMat); post.position.set(0,h/2,z); grp.add(post); });
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(0.22,0.22,Math.abs(z1-z0)+0.4), shelfMat); bar.position.set(0,h,(z0+z1)/2); grp.add(bar);
+      const beam = new THREE.Mesh(new THREE.PlaneGeometry(Math.abs(z1-z0), h*0.92), new THREE.MeshBasicMaterial({ color:col, transparent:true, opacity:0.07, side:THREE.DoubleSide }));
+      beam.rotation.y = Math.PI/2; beam.position.set(0, h*0.5, (z0+z1)/2); grp.add(beam);
+      scene.add(grp);
+      return { grp, beam };
+    };
+
+    let update = (dt,now)=>{};
+    let orbitOpts = { az:0.7, pol:0.92, r:16, auto:0.0012 };
+    let target = new THREE.Vector3(0, 1, 0);
+
+    // simple stylised human figure
+    const makeHuman = (shirt, pants)=>{
+      const g=new THREE.Group();
+      const skin=0xd8a878;
+      const torso=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.62,0.3), boxMat(shirt||0x2f6da0)); torso.position.y=1.12; g.add(torso);
+      const hip=new THREE.Mesh(new THREE.BoxGeometry(0.46,0.4,0.3), boxMat(pants||0x223149)); hip.position.y=0.7; g.add(hip);
+      const head=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.32,0.3), boxMat(skin)); head.position.y=1.62; g.add(head);
+      const legL=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.62,0.2), boxMat(pants||0x223149)); legL.position.set(-0.13,0.31,0); g.add(legL);
+      const legR=legL.clone(); legR.position.x=0.13; g.add(legR);
+      const armL=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.55,0.16), boxMat(shirt||0x2f6da0)); armL.position.set(-0.32,1.12,0); g.add(armL);
+      const armR=armL.clone(); armR.position.x=0.32; g.add(armR);
+      g.userData={ legL, legR, armL, armR };
+      return g;
+    };
+    // simple car
+    const makeCar = (col)=>{
+      const c=new THREE.Group();
+      const body=new THREE.Mesh(new THREE.BoxGeometry(2.4,0.7,1.3), boxMat(col)); body.position.y=0.62; c.add(body);
+      const cab=new THREE.Mesh(new THREE.BoxGeometry(1.3,0.62,1.2), boxMat(col)); cab.position.set(-0.1,1.18,0); c.add(cab);
+      const wind=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.4,1.0), new THREE.MeshStandardMaterial({color:0x0a1622,metalness:.6,roughness:.2})); wind.position.set(0.56,1.2,0); c.add(wind);
+      [[-0.75,0.7],[0.75,0.7],[-0.75,-0.7],[0.75,-0.7]].forEach(p=>{ const w=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,0.25,14), new THREE.MeshStandardMaterial({color:0x0a0a0a})); w.rotation.x=Math.PI/2; w.position.set(p[0],0.3,p[1]); c.add(w); });
+      const wsd=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.18,0.4), tagMat()); wsd.position.set(0.56,1.18,0); c.add(wsd);
+      c.userData={ tag:wsd };
+      return c;
+    };
+
+    if(plan==='warehouse'){
+      setLabel('STOK TERINDEKS');
+      const prodCols=[0xc9923a,0x4a7a4a,0x9a3b2e,0x2f6da0,0x6a4a8a,0xbb5547,0x3a6a8a];
+      const makeShelf=(z,face)=>{
+        const g=new THREE.Group();
+        const back=new THREE.Mesh(new THREE.BoxGeometry(18,3.4,0.3), boxMat(0x223149)); back.position.set(0,1.7,0); g.add(back);
+        for(let s=0;s<3;s++){ const sb=new THREE.Mesh(new THREE.BoxGeometry(18,0.12,1.1), shelfMat); sb.position.set(0,0.7+s*1.05,face*0.45); g.add(sb);
+          for(let i=0;i<22;i++){ const h=0.45+((i*5+s)%3)*0.13; const p=new THREE.Mesh(new THREE.BoxGeometry(0.56,h,0.6), boxMat(prodCols[(i+s)%prodCols.length])); p.position.set(-8.4+i*0.78, 0.7+s*1.05+h/2+0.06, face*0.45); g.add(p); }
+        }
+        g.position.set(0,0,z); scene.add(g);
+      };
+      makeShelf(-2.7,1); makeShelf(2.7,-1);
+      // worker with handheld scanner
+      const worker=makeHuman(0xffb24d, 0x223149); worker.position.set(-8,0,0); scene.add(worker);
+      const scanner=new THREE.Mesh(new THREE.BoxGeometry(0.32,0.2,0.14), new THREE.MeshStandardMaterial({color:0x16314e,emissive:0x3a7fb5,emissiveIntensity:.4,metalness:.5,roughness:.4})); scanner.position.set(0.42,1.18,0.42); worker.add(scanner);
+      // vertical scan plane that flashes when reading a section
+      const beam=new THREE.Mesh(new THREE.PlaneGeometry(4.6,2.6), new THREE.MeshBasicMaterial({color:0xffb24d,transparent:true,opacity:0,side:THREE.DoubleSide}));
+      beam.rotation.y=Math.PI/2; beam.position.y=1.4; scene.add(beam);
+      const shelfLetters=['A','B','C','D','E','F','G'];
+      let dir=1, scanT=0, sect=-1, flash=0;
+      update=(dt,now)=>{
+        worker.position.x += dir*dt*2.4;
+        if(worker.position.x>8.2) dir=-1; if(worker.position.x<-8.2) dir=1;
+        worker.rotation.y = dir>0 ? Math.PI/2 : -Math.PI/2;
+        const sw=Math.sin(now*0.013)*0.5; worker.userData.legL.rotation.x=sw; worker.userData.legR.rotation.x=-sw;
+        beam.position.x = worker.position.x; beam.material.opacity = flash*0.42;
+        scanner.material.emissiveIntensity = 0.4 + flash*1.4;
+        const s=Math.round((worker.position.x+8)/2.3); scanT+=dt;
+        if(s!==sect && scanT>0.45 && worker.position.x>-8 && worker.position.x<8){
+          sect=s; scanT=0; flash=1;
+          const items=8+((s*7+5)%18); this._readCount+=items; setCount();
+          logEvent('Rak '+shelfLetters[((s%7)+7)%7]+' · '+items+' unit', '#ffcf8f');
+        }
+        flash=Math.max(0,flash-dt*2.0);
+      };
+      target.set(0,1.4,0); orbitOpts={ az:0.58, pol:0.8, r:16.5, auto:0.0010 };
+
+    } else if(plan==='toll'){
+      setLabel('KENDARAAN LEWAT');
+      // wide multi-lane toll road
+      const LANES=[-3.0,0,3.0];
+      const road = new THREE.Mesh(new THREE.PlaneGeometry(44,11), new THREE.MeshStandardMaterial({ color:0x101a26, roughness:.95 }));
+      road.rotation.x=-Math.PI/2; road.position.y=0.02; scene.add(road);
+      // lane dashes
+      [-1.5,1.5].forEach(z=>{ for(let i=-10;i<=10;i++){ const ln=new THREE.Mesh(new THREE.BoxGeometry(1.0,0.02,0.16), new THREE.MeshBasicMaterial({ color:0xffd9a0 })); ln.position.set(i*2.1,0.04,z); scene.add(ln); } });
+      // big gantry across all lanes + per-lane booths/arms
+      const gantryBar=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,11), shelfMat); gantryBar.position.set(0,5.2,0); scene.add(gantryBar);
+      [-5,5].forEach(z=>{ const post=new THREE.Mesh(new THREE.BoxGeometry(0.5,5.2,0.5), shelfMat); post.position.set(0,2.6,z); scene.add(post); });
+      const lanes = LANES.map((lz,li)=>{
+        const reader=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.5,1.0), new THREE.MeshStandardMaterial({color:0x7fc4f0,emissive:0x3a7fb5,emissiveIntensity:.5})); reader.position.set(0,5.0,lz); scene.add(reader);
+        // booth
+        const booth=new THREE.Mesh(new THREE.BoxGeometry(1.0,1.8,1.0), boxMat(0x223149)); booth.position.set(0,0.9,lz-1.4); scene.add(booth);
+        // barrier arm on a pivot
+        const pivot=new THREE.Group(); pivot.position.set(0.2,1.0,lz-0.9); scene.add(pivot);
+        const arm=new THREE.Mesh(new THREE.BoxGeometry(2.6,0.14,0.14), new THREE.MeshStandardMaterial({color:0xffb24d,emissive:0xffb24d,emissiveIntensity:.3})); arm.position.x=1.3; pivot.add(arm);
+        for(let s=0;s<3;s++){ const st=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.14,0.16), boxMat(0x9a3b2e)); st.position.set(0.5+s*0.8,0,0.001); pivot.add(st); }
+        const car=makeCar([0x9a3b2e,0x2f6da0,0x4a7a4a][li]); car.position.set(-15-li*4,0,lz); scene.add(car);
+        return { reader, pivot, car, lz, armT:0, prevX:-15, slowed:false };
+      });
+      let beamFlash=0;
+      update=(dt,now)=>{
+        lanes.forEach((L,li)=>{
+          L.prevX=L.car.position.x;
+          const nearGate = L.car.position.x>-2.2 && L.car.position.x<1.0;
+          const speed = (nearGate && L.armT<0.4) ? 1.3 : 4.6;
+          L.car.position.x += dt*speed;
+          if(L.car.position.x>16){ L.car.position.x=-15-((li*3)%6); L.armT=0; }
+          if(L.prevX<-0.2 && L.car.position.x>=-0.2){ this._readCount++; setCount(); L.armT=1; beamFlash=1; logEvent('Lajur '+(li+1)+' · kendaraan #'+this._readCount, '#a9d4ff'); }
+          L.armT=Math.max(0,L.armT-dt*0.45);
+          L.pivot.rotation.z = (L.armT>0? Math.PI/2.2 : 0);
+          L.reader.material.emissiveIntensity = 0.5 + (L.armT>0.6?1.0:0);
+          L.car.userData.tag.material.emissiveIntensity = 0.6 + (L.armT>0.6?1.2:0);
+        });
+        beamFlash=Math.max(0,beamFlash-dt*2);
+      };
+      target.set(0,1.8,0); orbitOpts={ az:0.66, pol:0.84, r:21, auto:0.0009 };
+
+    } else if(plan==='logistics'){
+      // ---- full supply-chain flow: warehouse A → truck → warehouse B ----
+      setLabel('PALET DILACAK');
+      const warehouse=(x,label,col)=>{
+        const g=new THREE.Group();
+        // building shell (open front facing road)
+        const back=new THREE.Mesh(new THREE.BoxGeometry(5,3.4,0.2), boxMat(0x1a2940)); back.position.set(0,1.7,-2.4); g.add(back);
+        const roof=new THREE.Mesh(new THREE.BoxGeometry(5.2,0.2,5), boxMat(col)); roof.position.set(0,3.5,0); g.add(roof);
+        [-2.4,2.4].forEach(z=>{ const wall=new THREE.Mesh(new THREE.BoxGeometry(0.2,3.4,5), boxMat(0x1a2940)); wall.position.set((z>0?2.4:-2.4),1.7,0); g.add(wall); });
+        // dock portal at the front
+        for(let s=0;s<2;s++){ const sh=new THREE.Mesh(new THREE.BoxGeometry(4,0.14,1.6), shelfMat); sh.position.set(0,0.7+s*1.2,-1.4); g.add(sh);
+          for(let i=-1;i<=1;i++){ const b=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.7,1.0), boxMat([0x4a3a2a,0x274a3a,0x3a3a5a][(i+1)%3])); b.position.set(i*1.2,0.8+s*1.2,-1.4); g.add(b); } }
+        g.position.set(x,0,0); scene.add(g);
+        return g;
+      };
+      warehouse(-12,'A',0x2f6da0);   // origin
+      warehouse(12,'B',0x4a7a4a);    // destination (other agent)
+      // road between
+      const road=new THREE.Mesh(new THREE.PlaneGeometry(20,3.4), new THREE.MeshStandardMaterial({color:0x101a26,roughness:.95})); road.rotation.x=-Math.PI/2; road.position.set(0,0.02,3); scene.add(road);
+      for(let i=-4;i<=4;i++){ const ln=new THREE.Mesh(new THREE.BoxGeometry(1,0.02,0.16), new THREE.MeshBasicMaterial({color:0xffd9a0})); ln.position.set(i*2.2,0.04,3); scene.add(ln); }
+      // reader portals at each dock
+      const PA=portal(-1.3,1.3,3.0,0xffb24d); PA.grp.position.set(-12,0,1.4);
+      const PB=portal(-1.3,1.3,3.0,0xffb24d); PB.grp.position.set(12,0,1.4);
+      // truck that ferries a pallet
+      const truck=new THREE.Group();
+      const trailer=new THREE.Mesh(new THREE.BoxGeometry(3.4,2.2,2.0), boxMat(0x2f4a63)); trailer.position.set(0,1.4,0); truck.add(trailer);
+      const cab=new THREE.Mesh(new THREE.BoxGeometry(1.2,1.6,1.9), boxMat(0x9a3b2e)); cab.position.set(2.2,1.0,0); truck.add(cab);
+      [[-1.0],[1.0],[2.2]].forEach(p=>{ const w=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.4,0.3,14), new THREE.MeshStandardMaterial({color:0x0a0a0a})); w.rotation.x=Math.PI/2; w.position.set(p[0],0.4,1.0); truck.add(w); const w2=w.clone(); w2.position.z=-1.0; truck.add(w2); });
+      const cargo=new THREE.Mesh(new THREE.BoxGeometry(1.4,1.2,1.4), boxMat(0x5a4a2a)); cargo.position.set(-0.4,1.4,0); truck.add(cargo);
+      const cdot=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.14,0.02), tagMat()); cdot.position.set(-0.4,1.5,1.01); truck.add(cdot);
+      truck.position.set(-12,0,3); truck.rotation.y=0; scene.add(truck);
+      // stages: 0 load@A(read out), 1 drive→B, 2 arrive@B(read in), 3 return
+      let stage=0, t=0, flashA=0, flashB=0;
+      update=(dt,now)=>{
+        t+=dt;
+        if(stage===0){ truck.position.x=-12; if(t>1.2){ this._readCount++; setCount(); logEvent('Palet #'+this._readCount+' keluar · Gudang A', '#ffcf8f'); flashA=1; stage=1; t=0; } }
+        else if(stage===1){ truck.position.x += dt*5.5; truck.position.z=3; if(truck.position.x>=12){ truck.position.x=12; stage=2; t=0; } }
+        else if(stage===2){ if(t>1.0){ this._readCount++; setCount(); logEvent('Palet #'+this._readCount+' masuk · Gudang B', '#7fc4f0'); flashB=1; stage=3; t=0; } }
+        else { truck.position.x -= dt*8.5; if(truck.position.x<=-12){ truck.position.x=-12; stage=0; t=0; } }
+        flashA=Math.max(0,flashA-dt*2); flashB=Math.max(0,flashB-dt*2);
+        PA.beam.material.opacity=0.07+flashA*0.6; PB.beam.material.opacity=0.07+flashB*0.6;
+        cdot.material.emissiveIntensity=0.6+Math.max(flashA,flashB)*1.4;
+      };
+      target.set(0,1.4,1.5); orbitOpts={ az:0.7, pol:0.82, r:24, auto:0.0009 };
+
+    } else if(plan==='library'){
+      // ---- library interior: shelves, reading area, checkout gate ----
+      setLabel('BUKU DIPINJAM');
+      const bookCols=[0x9a3b2e,0x2f6da0,0x4a7a4a,0xc9923a,0x6a4a8a,0xbb5547,0x3a6a8a];
+      // warm wood floor strip
+      const woodFloor=new THREE.Mesh(new THREE.PlaneGeometry(20,12), new THREE.MeshStandardMaterial({color:0x2a1f14,roughness:.9})); woodFloor.rotation.x=-Math.PI/2; woodFloor.position.set(0,0.015,-1); scene.add(woodFloor);
+      const shelfWall=(z,face)=>{
+        const g=new THREE.Group();
+        const bk=new THREE.Mesh(new THREE.BoxGeometry(16,4.6,0.4), boxMat(0x3a2a1e)); bk.position.set(0,2.3,0); g.add(bk);
+        for(let s=0;s<3;s++){ const sb=new THREE.Mesh(new THREE.BoxGeometry(16,0.16,1.1), boxMat(0x4a3320)); sb.position.set(0,0.9+s*1.45,face*0.45); g.add(sb);
+          for(let i=0;i<40;i++){ const h=0.9+((i*7)%4)*0.08; const book=new THREE.Mesh(new THREE.BoxGeometry(0.34,h,0.72), boxMat(bookCols[(i+s)%bookCols.length])); book.position.set(-7.6+i*0.39, 0.9+s*1.45+h/2+0.07, face*0.45); g.add(book); }
+        }
+        g.position.set(0,0,z); scene.add(g);
+      };
+      shelfWall(-4.6,1); shelfWall(4.6,-1);
+      // reading tables with chairs + a seated reader
+      const table=(x)=>{
+        const top=new THREE.Mesh(new THREE.BoxGeometry(2.4,0.12,1.3), boxMat(0x5a4330)); top.position.set(x,0.85,-1); scene.add(top);
+        [[-1.0,-0.5],[1.0,-0.5],[-1.0,0.5],[1.0,0.5]].forEach(p=>{ const leg=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.85,0.12), boxMat(0x3a2a1e)); leg.position.set(x+p[0],0.42,-1+p[1]); scene.add(leg); });
+        // little books on the table
+        for(let i=0;i<3;i++){ const b=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.1,0.36), boxMat(bookCols[(i+x)%bookCols.length])); b.position.set(x-0.6+i*0.6,0.96,-1.2); scene.add(b); }
+        // a seated reader
+        const r=makeHuman(0x4a7a4a,0x223149); r.position.set(x,0,0.1); r.userData.legL.rotation.x=-1.4; r.userData.legR.rotation.x=-1.4; r.position.y=-0.35; scene.add(r);
+      };
+      table(-4.5); table(0.2);
+      // checkout/security gate (exit)
+      const P=portal(-2.2,2.2,2.8,0xffb24d); P.grp.position.set(0,0,4.5);
+      [-2.2,2.2].forEach(z=>{ const ped=new THREE.Mesh(new THREE.BoxGeometry(0.5,1.5,0.5), new THREE.MeshStandardMaterial({color:0x12283f,metalness:.4,roughness:.5})); ped.position.set(0,0.75,z+4.5); scene.add(ped); });
+      // a patron carrying books, walking out through the gate
+      const patron=makeHuman(0xc9923a,0x223149); scene.add(patron);
+      const carried=new THREE.Group();
+      for(let i=0;i<3;i++){ const b=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.16,0.5), boxMat(bookCols[i+1])); b.position.y=i*0.18; carried.add(b); }
+      const cd=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.1,0.02), tagMat()); cd.position.set(0,0.18,0.26); carried.add(cd);
+      carried.position.set(0,1.05,0.35); patron.add(carried);
+      const titles=['Atlas Dunia','Sejarah Nusantara','Fisika Dasar','Novel Senja','Ensiklopedia','Kamus Besar','Biologi Sel','Puisi Pagi'];
+      let z0=-3, prevZ=-3, flash=0;
+      update=(dt,now)=>{
+        prevZ=patron.position.z;
+        patron.position.z += dt*2.4; patron.rotation.y=Math.PI;
+        const sw=Math.sin(now*0.012)*0.5; patron.userData.legL.rotation.x=sw; patron.userData.legR.rotation.x=-sw;
+        if(patron.position.z>9) patron.position.z=-3;
+        if(prevZ<4.5 && patron.position.z>=4.5){ this._readCount++; setCount(); flash=1; logEvent('"'+titles[(this._readCount-1)%titles.length]+'"', '#7fc4f0'); }
+        flash=Math.max(0,flash-dt*2.2);
+        P.beam.material.opacity=0.07+flash*0.5;
+        cd.material.emissiveIntensity=0.6+flash*1.4+Math.sin(now*0.01)*0.2;
+      };
+      target.set(0,1.4,2); orbitOpts={ az:0.7, pol:0.8, r:18, auto:0.0010 };
+
+    } else if(plan==='livestock'){
+      // ---- pasture + barn: cows graze, then return to the barn one-by-one, each ID logged (LF) ----
+      setLabel('TERNAK MASUK');
+      const grass=new THREE.Mesh(new THREE.PlaneGeometry(50,50), new THREE.MeshStandardMaterial({ color:0x2c4626, roughness:1 })); grass.rotation.x=-Math.PI/2; grass.position.y=0.02; scene.add(grass);
+      const fenceMat=boxMat(0x6a4a2e);
+      // barn on the -x side
+      const barn=new THREE.Group();
+      const bw=new THREE.Mesh(new THREE.BoxGeometry(5,3.2,7), boxMat(0x7a3128)); bw.position.set(0,1.6,0); barn.add(bw);
+      const roofL=new THREE.Mesh(new THREE.BoxGeometry(0.3,2.4,7.4), boxMat(0x5a2018)); roofL.position.set(-1.4,3.6,0); roofL.rotation.z=0.7; barn.add(roofL);
+      const roofR=roofL.clone(); roofR.position.x=1.4; roofR.rotation.z=-0.7; barn.add(roofR);
+      const doorway=new THREE.Mesh(new THREE.BoxGeometry(0.2,2.4,3.0), new THREE.MeshStandardMaterial({color:0x100a08})); doorway.position.set(2.5,1.2,0); barn.add(doorway);
+      barn.position.set(-9,0,0); scene.add(barn);
+      // scanner post at the barn gate (cows pass very close — LF)
+      const sp=new THREE.Mesh(new THREE.BoxGeometry(0.3,2.0,0.3), shelfMat); sp.position.set(-6.0,1.0,1.7); scene.add(sp);
+      const sPanel=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.7,0.12), new THREE.MeshStandardMaterial({color:0x7fc4f0,emissive:0x3a7fb5,emissiveIntensity:.6})); sPanel.position.set(-6.0,1.2,1.5); scene.add(sPanel);
+      const ring=new THREE.Mesh(new THREE.RingGeometry(0.5,0.55,32), new THREE.MeshBasicMaterial({color:0xffb24d,transparent:true,opacity:0,side:THREE.DoubleSide})); ring.position.set(-6.0,1.2,1.5); scene.add(ring);
+      const makeCow=(col)=>{
+        const c=new THREE.Group();
+        const body=new THREE.Mesh(new THREE.BoxGeometry(1.6,0.9,0.9), boxMat(col)); body.position.y=1.0; c.add(body);
+        const head=new THREE.Mesh(new THREE.BoxGeometry(0.62,0.62,0.6), boxMat(col)); head.position.set(1.0,1.15,0); c.add(head);
+        const snout=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.35,0.42), boxMat(0xc9a0a0)); snout.position.set(1.35,1.0,0); c.add(snout);
+        const legs=[[-0.6,-0.32],[0.6,-0.32],[-0.6,0.32],[0.6,0.32]].map(p=>{ const leg=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.72,0.2), boxMat(0x2a1f18)); leg.position.set(p[0],0.36,p[1]); c.add(leg); return leg; });
+        const etag=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.18,0.04), tagMat()); etag.position.set(1.0,1.42,0.33); c.add(etag);
+        return { c, etag, legs };
+      };
+      const cols=[0x4a3528,0x6a5040,0x2a2622,0x5a4535,0x3a2a20];
+      // 10 cows grazing out in the pasture (+x area), each with a queue slot
+      const HERD=10;
+      const cows=[];
+      for(let i=0;i<HERD;i++){
+        const cw=makeCow(cols[i%cols.length]);
+        const gx=2+(i%5)*2.2, gz=(i<5? -3.2 : 3.2) + (i%2?0.6:-0.6);
+        cw.c.position.set(gx,0,gz); cw.c.rotation.y=Math.PI*0.5+((i*1.3)%1);
+        cw.graze=[gx,gz]; cw.state='graze'; cw.t=i*0.9; cw.id=i+1;
+        scene.add(cw.c); cows.push(cw);
+      }
+      let queueT=0, pulse=0, nextIn=0;
+      const fmt=n=>'00'.slice(String(n).length-1)+n; // 3-digit-ish
+      update=(dt,now)=>{
+        queueT+=dt;
+        // release one cow toward the barn every ~2.2s
+        if(queueT>nextIn){ const c=cows.find(c=>c.state==='graze'); if(c){ c.state='walk'; c.wt=0; } nextIn=queueT+2.2; }
+        pulse=Math.max(0,pulse-dt*1.4);
+        const pr=0.6+(1-pulse)*0.6; ring.scale.set(pr,pr,1); ring.material.opacity=pulse*0.85;
+        sPanel.material.emissiveIntensity=0.5+pulse*1.3;
+        cows.forEach((cw,i)=>{
+          if(cw.state==='graze'){ cw.c.position.y=Math.sin(now*0.002+i)*0.02; const head=cw.c.children[1]; head.rotation.z=Math.sin(now*0.0015+i)*0.18-0.1; }
+          else if(cw.state==='walk'){
+            cw.wt+=dt;
+            // walk toward gate (-6,1.5) then into barn doorway (-6.5,0)
+            const tx=-6.0, tz=1.5;
+            const dx=tx-cw.c.position.x, dz=tz-cw.c.position.z;
+            const d=Math.hypot(dx,dz);
+            cw.c.rotation.y=Math.atan2(dz,dx)+Math.PI; // face travel (snout +x local)
+            const sp2=2.6;
+            if(d>0.15){ cw.c.position.x+=dx/d*dt*sp2; cw.c.position.z+=dz/d*dt*sp2; }
+            // leg walk swing
+            const sw=Math.sin(now*0.012+i)*0.5; cw.legs[0].rotation.x=sw; cw.legs[3].rotation.x=sw; cw.legs[1].rotation.x=-sw; cw.legs[2].rotation.x=-sw;
+            cw.etag.material.emissiveIntensity=0.6;
+            if(d<=0.5 && !cw.scanned){ cw.scanned=true; this._readCount++; setCount(); pulse=1; cw.etag.material.emissiveIntensity=2.0; logEvent('Sapi '+fmt(cw.id)+' masuk kandang', '#ffcf8f'); cw.state='enter'; cw.et=0; }
+          } else if(cw.state==='enter'){
+            cw.et+=dt; cw.c.position.x += -dt*2.2; // walk into barn
+            if(cw.c.position.x<-8.5){ cw.c.visible=false; cw.state='done'; }
+          }
+        });
+        // auto-reset once all are in
+        if(cows.every(c=>c.state==='done')){ cows.forEach((c,i)=>{ c.c.visible=true; c.state='graze'; c.scanned=false; const gx=2+(i%5)*2.2, gz=(i<5?-3.2:3.2)+(i%2?0.6:-0.6); c.c.position.set(gx,0,gz); }); this._readCount=0; setCount(); const lg=document.querySelector('[data-readlog]'); if(lg) lg.innerHTML=''; queueT=0; nextIn=0; }
+      };
+      target.set(-3,1.4,0); orbitOpts={ az:0.9, pol:0.82, r:20, auto:0.0011 };
+
+    } else { // gate / access — office entry with two lanes: one granted, one denied
+      setLabel('AKSES');
+      // office facade wall
+      const facade=new THREE.Mesh(new THREE.BoxGeometry(16,5,0.4), boxMat(0x16243a)); facade.position.set(0,2.5,-2.5); scene.add(facade);
+      for(let i=-3;i<=3;i++){ const win=new THREE.Mesh(new THREE.BoxGeometry(1.4,1.4,0.05), new THREE.MeshStandardMaterial({color:0x2a4a6a,emissive:0x16314e,emissiveIntensity:.3,metalness:.6,roughness:.2})); win.position.set(i*2.0,3.4,-2.28); scene.add(win); }
+      const lobbyFloor=new THREE.Mesh(new THREE.PlaneGeometry(16,6), new THREE.MeshStandardMaterial({color:0x0c1a2a,roughness:.8,metalness:.1})); lobbyFloor.rotation.x=-Math.PI/2; lobbyFloor.position.set(0,0.02,-1.4); scene.add(lobbyFloor);
+      // two turnstile lanes
+      const makeLane=(lx, grant)=>{
+        // two side pedestals + a glass flap gate
+        [[-0.8],[0.8]].forEach(p=>{ const ped=new THREE.Mesh(new THREE.BoxGeometry(0.5,1.1,1.6), boxMat(0x223149)); ped.position.set(lx+p[0],0.55,0); scene.add(ped); });
+        const reader=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.5,0.12), new THREE.MeshStandardMaterial({color:0x7fc4f0,emissive:0x3a7fb5,emissiveIntensity:.6})); reader.position.set(lx-0.8,1.15,0.5); reader.rotation.y=0.3; scene.add(reader);
+        // flap (glass) — pivots open when granted
+        const flapPivot=new THREE.Group(); flapPivot.position.set(lx-0.55,0.6,0); scene.add(flapPivot);
+        const flap=new THREE.Mesh(new THREE.BoxGeometry(0.08,1.0,1.1), new THREE.MeshStandardMaterial({color:grant?0x2f6a4a:0x6a2f2f,transparent:true,opacity:.5,metalness:.5,roughness:.2})); flap.position.z=0.55; flapPivot.add(flap);
+        const flap2Pivot=new THREE.Group(); flap2Pivot.position.set(lx+0.55,0.6,0); scene.add(flap2Pivot);
+        const flap2=new THREE.Mesh(new THREE.BoxGeometry(0.08,1.0,1.1), new THREE.MeshStandardMaterial({color:grant?0x2f6a4a:0x6a2f2f,transparent:true,opacity:.5,metalness:.5,roughness:.2})); flap2.position.z=-0.55; flap2Pivot.add(flap2);
+        // status light
+        const light=new THREE.Mesh(new THREE.SphereGeometry(0.14,12,12), new THREE.MeshBasicMaterial({color:grant?0x39d98a:0xff5a5a})); light.position.set(lx-0.8,1.5,0.5); scene.add(light);
+        // person
+        const person=makeHuman(grant?0x2f6da0:0x7a4a4a,0x223149); person.position.set(lx,0,5.5); scene.add(person);
+        const badge=new THREE.Mesh(new THREE.BoxGeometry(0.26,0.34,0.04), tagMat()); badge.position.set(0.18,1.1,0.16); person.add(badge);
+        return { lx, grant, flapPivot, flap2Pivot, reader, light, person, badge, t:grant?0:1.0, prevZ:5.5, scanned:false, ring:(()=>{ const rg=new THREE.Mesh(new THREE.RingGeometry(0.3,0.34,28), new THREE.MeshBasicMaterial({color:grant?0x39d98a:0xff5a5a,transparent:true,opacity:0,side:THREE.DoubleSide})); rg.position.set(lx-0.8,1.15,0.55); scene.add(rg); return rg; })() };
+      };
+      const lanes=[ makeLane(-3.2,true), makeLane(3.2,false) ];
+      let granted=0, denied=0;
+      update=(dt,now)=>{
+        lanes.forEach((L,li)=>{
+          L.prevZ=L.person.position.z;
+          // walk toward gate (z from 5.5 → 1.2). Denied person stops at ~1.6.
+          const stopZ = L.grant ? -1.0 : 1.7;
+          const sw=Math.sin(now*0.012+li)*0.5; L.person.userData.legL.rotation.x=sw; L.person.userData.legR.rotation.x=-sw;
+          if(L.person.position.z>stopZ+0.05){ L.person.position.z -= dt*2.2; L.person.rotation.y=Math.PI; }
+          else { L.person.userData.legL.rotation.x=0; L.person.userData.legR.rotation.x=0; }
+          // scan when near reader
+          if(!L.scanned && L.person.position.z<2.4){ L.scanned=true; L.pulse=1; if(L.grant){ granted++; this._readCount=granted+denied; setCount(); logEvent('Diizinkan · Karyawan #'+granted, '#39d98a'); } else { denied++; this._readCount=granted+denied; setCount(); logEvent('DITOLAK · kartu tidak valid', '#ff5a5a'); } }
+          L.pulse=Math.max(0,(L.pulse||0)-dt*1.5);
+          const pr=0.6+(1-(L.pulse||0))*0.7; L.ring.scale.set(pr,pr,1); L.ring.material.opacity=(L.pulse||0)*0.8;
+          L.reader.material.emissiveIntensity=0.6+(L.pulse||0)*1.2;
+          L.light.material.color.setHex(L.grant?0x39d98a:0xff5a5a);
+          L.badge.material.emissiveIntensity=0.6+(L.pulse||0)*1.4;
+          // granted: flaps open; denied: stay shut
+          const wantOpen = L.grant ? (L.person.position.z<2.0 && L.person.position.z>-0.6 ? 1:0) : 0;
+          L.t += (wantOpen - L.t)*Math.min(1,dt*4);
+          L.flapPivot.rotation.y = -L.t*1.3; L.flap2Pivot.rotation.y = L.t*1.3;
+          // reset after passing / bouncing
+          if(L.grant && L.person.position.z<-1.0){ L.person.position.z=5.5; L.scanned=false; }
+          if(!L.grant){ // denied person waits then walks away and returns
+            if(L.scanned){ L.wait=(L.wait||0)+dt; if(L.wait>1.6){ L.person.position.z += dt*2.4; L.person.rotation.y=0; if(L.person.position.z>6){ L.person.position.z=5.5; L.scanned=false; L.wait=0; } } }
+          }
+        });
+      };
+      target.set(0,1.5,1.5); orbitOpts={ az:0.6, pol:0.86, r:15, auto:0.0011 };
+    }
+
+    const r = this._mkRenderer(canvas);
+    const orbit = this._orbit(canvas, cam, target, orbitOpts);
+    this._watchSize(r, cam, canvas);
+    const sc = this._addScene({ canvas, renderer:r, render:(dt,now)=>{ update(dt,now); orbit.apply(); r.render(scene,cam); } }, true);
+    this._planScene = sc;
+  }
+
+  _disposePlan(){
+    if(this._planScene){
+      const idx = this._scenes.indexOf(this._planScene);
+      if(idx>=0) this._scenes.splice(idx,1);
+      const reg = window.__rfidScenes || [];
+      const ri = reg.indexOf(this._planScene); if(ri>=0) reg.splice(ri,1);
+      try{ if(this._planScene.io) this._planScene.io.disconnect(); }catch(e){}
+      try{ this._planScene.renderer.dispose(); this._planScene.renderer.forceContextLoss(); }catch(e){}
+      this._planScene = null;
+    }
+  }
+
+  // ---------- render ----------
+  renderVals(){
+    const band = this.state.band;
+    const info = this.bandInfo;
+    const tabs = ['LF','HF','UHF'].map(a=>{
+      const active = a===band;
+      return { abbr:a, freq:info[a].freq, onClick:()=>this._setBand(a),
+        bg: active?'#ffb24d':'transparent', fg: active?'#071423':'#9cc2dd', bd: active?'#ffb24d':'rgba(125,196,240,.25)' };
+    });
+    const cases = this.useCases.map((u,i)=>Object.assign({}, u, { open:()=>this.setState({ openApp:i }) }));
+    const appData = this.state.openApp!=null ? cases[this.state.openApp] : { icon:'', title:'', band:'', planTitle:'', planDesc:'' };
+    return {
+      rootRef:this.rootRef, heroRef:this.heroRef, waveRef:this.waveRef, teardownRef:this.teardownRef, planRef:this.planRef,
+      showSplash:this.state.showSplash,
+      enterSite:()=>{
+        const el=this.rootRef.current && this.rootRef.current.querySelector('[data-splash]');
+        if(el){ el.style.transition='transform 1s cubic-bezier(.76,0,.24,1), opacity .8s ease'; el.style.transform='translateY(-100%)'; el.style.opacity='0'; }
+        setTimeout(()=>{ this.setState({showSplash:false}); }, 720);
+      },
+      steps:this.steps, layers:this.layers, useCases:cases,
+      bandTabs:tabs, bandData:info[band],
+      waveMode:this.state.waveMode,
+      waveTopLabel: this.state.waveMode==='passive' ? 'PASSIVE · Reader memancarkan → Tag backscatter' : 'ACTIVE · Tag memancarkan sendiri (bertenaga baterai)',
+      modeTabs: ['passive','active'].map(m=>{ const on=m===this.state.waveMode; return { label:m==='passive'?'PASSIVE':'ACTIVE', onClick:()=>this._setWaveMode(m), bg:on?'#ffb24d':'transparent', fg:on?'#071423':'#9cc2dd', bd:on?'#ffb24d':'rgba(125,196,240,.25)' }; }),
+      appOpen:this.state.openApp!=null, appData,
+      closeApp:()=>this.setState({ openApp:null }),
+    };
+  }
+}
+</script>
+</body>
+</html>
