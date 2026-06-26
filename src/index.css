@@ -18,3 +18,15 @@ button{font-family:'IBM Plex Mono',monospace;cursor:pointer;}
 .card-hover:hover{border-color:#ffb24d!important;transform:translateY(-4px);box-shadow:0 14px 40px rgba(0,0,0,.4);}
 .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1);}
 .reveal.visible{opacity:1;transform:none;}
+
+/* ── Mobile global fixes ─────────────────────────────── */
+@media (max-width: 768px) {
+  /* Prevent double-tap zoom on buttons/links */
+  button, a { touch-action: manipulation; }
+
+  /* Disable hover-state transform on touch (no hover on mobile) */
+  .card-hover:hover { transform: none; box-shadow: none; }
+
+  /* Reveal boxes: skip delay on mobile for snappier feel */
+  .reveal-box { transition-delay: 0ms !important; }
+}

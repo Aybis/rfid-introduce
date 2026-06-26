@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLenis } from './hooks/useLenis';
+import { useIsMobile } from './hooks/useIsMobile';
 import { SplashScreen } from './components/organisms/SplashScreen';
 import { HeroSection } from './components/organisms/HeroSection';
 import { WaveSection } from './components/organisms/WaveSection';
@@ -13,6 +14,8 @@ export default function App() {
   const [splashDone, setSplashDone] = useState(false);
   const [activeUC, setActiveUC] = useState<UseCase | null>(null);
   const [scrollPct, setScrollPct] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
   useLenis();
 
   // Progress bar
@@ -39,15 +42,44 @@ export default function App() {
       </div>
 
       {/* Nav */}
-      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 6vw', background: 'rgba(5,15,28,.72)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(125,196,240,.10)' }}>
-        <span style={{ fontFamily: '"Space Grotesk",sans-serif', fontWeight: 700, fontSize: 15, letterSpacing: '.04em', color: '#fff' }}>
-          <span style={{ color: '#ffb24d' }}>RFID</span> CINEMATIC
-        </span>
-        <div style={{ display: 'flex', gap: 28 }}>
-          {[['#how', 'CARA KERJA'], ['#teardown', 'BEDAH'], ['#apps', 'APLIKASI']].map(([href, label]) => (
-            <a key={href} href={href} style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 12, letterSpacing: '.12em', color: href === '#apps' ? '#ffb24d' : '#4d7796', textDecoration: 'none' }}>{label}</a>
-          ))}
+      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(5,15,28,.72)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(125,196,240,.10)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '14px 5vw' : '18px 6vw' }}>
+          <span style={{ fontFamily: '"Space Grotesk",sans-serif', fontWeight: 700, fontSize: 15, letterSpacing: '.04em', color: '#fff' }}>
+            <span style={{ color: '#ffb24d' }}>RFID</span> CINEMATIC
+          </span>
+          {isMobile ? (
+            <button
+              onClick={() => setMenuOpen(o => !o)}
+              style={{ background: 'none', border: '1px solid rgba(125,196,240,.25)', borderRadius: 3, padding: '7px 10px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 4 }}
+              aria-label="Menu"
+            >
+              {[0,1,2].map(i => (
+                <span key={i} style={{ display: 'block', width: 18, height: 1.5, background: menuOpen ? '#ffb24d' : '#7fa9c9', transition: 'background .2s' }} />
+              ))}
+            </button>
+          ) : (
+            <div style={{ display: 'flex', gap: 28 }}>
+              {[['#how', 'CARA KERJA'], ['#teardown', 'BEDAH'], ['#apps', 'APLIKASI']].map(([href, label]) => (
+                <a key={href} href={href} style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 12, letterSpacing: '.12em', color: href === '#apps' ? '#ffb24d' : '#4d7796', textDecoration: 'none' }}>{label}</a>
+              ))}
+            </div>
+          )}
         </div>
+        {/* Mobile dropdown */}
+        {isMobile && menuOpen && (
+          <div style={{ display: 'flex', flexDirection: 'column', borderTop: '1px solid rgba(125,196,240,.12)', background: 'rgba(5,15,28,.95)' }}>
+            {[['#how', 'CARA KERJA'], ['#teardown', 'BEDAH'], ['#apps', 'APLIKASI']].map(([href, label]) => (
+              <a
+                key={href}
+                href={href}
+                onClick={() => setMenuOpen(false)}
+                style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 13, letterSpacing: '.12em', color: href === '#apps' ? '#ffb24d' : '#7fa9c9', textDecoration: 'none', padding: '14px 5vw', borderBottom: '1px solid rgba(125,196,240,.08)' }}
+              >
+                {label}
+              </a>
+            ))}
+          </div>
+        )}
       </nav>
 
       {/* Background — cutting mat grid */}

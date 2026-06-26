@@ -4,6 +4,7 @@ import { initWave } from '../../scenes/wave';
 import { BAND_INFO, WAVE_CFG, STEPS_PASSIVE, STEPS_ACTIVE } from '../../constants';
 import { BandTabs } from '../molecules/BandTabs';
 import { ModeTabs } from '../molecules/ModeTabs';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import type { Band, WaveMode, WaveCfgRuntime } from '../../constants';
 
 const GREEN = '#39d98a';
@@ -14,6 +15,7 @@ export function WaveSection() {
   const [band, setBandState] = useState<Band>('UHF');
   const [mode, setModeState] = useState<WaveMode>('passive');
   const [phaseLabel, setPhaseLabel] = useState('PASSIVE · Reader memancarkan sinyal ke sekitar');
+  const isMobile = useIsMobile();
   const info = BAND_INFO[band];
   const steps = mode === 'passive' ? STEPS_PASSIVE : STEPS_ACTIVE;
   const isActive = mode === 'active';
@@ -39,14 +41,14 @@ export function WaveSection() {
   }, []);
 
   return (
-    <section id="how" style={{ position: 'relative', padding: '90px 6vw 80px', zIndex: 5 }}>
+    <section id="how" style={{ position: 'relative', padding: isMobile ? '60px 5vw 50px' : '90px 6vw 80px', zIndex: 5 }}>
       <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11, letterSpacing: '.22em', color: '#ffb24d', marginBottom: 12 }}>SECTION 02 · CARA KERJA</div>
-      <h2 style={{ fontFamily: '"Space Grotesk",sans-serif', fontSize: 'clamp(24px,3.5vw,44px)', fontWeight: 700, color: '#fff', letterSpacing: '-.03em', marginBottom: 36 }}>Simulasi Gelombang</h2>
+      <h2 style={{ fontFamily: '"Space Grotesk",sans-serif', fontSize: 'clamp(22px,3.5vw,44px)', fontWeight: 700, color: '#fff', letterSpacing: '-.03em', marginBottom: isMobile ? 24 : 36 }}>Simulasi Gelombang</h2>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(340px,1fr))', gap: 28, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit,minmax(340px,1fr))', gap: 28, alignItems: 'start' }}>
 
         {/* Canvas */}
-        <div style={{ position: 'relative', height: 640 }}>
+        <div style={{ position: 'relative', height: isMobile ? 300 : 640 }}>
           <canvas
             ref={canvasRef}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block', touchAction: 'none', cursor: 'grab', borderRadius: 6 }}
@@ -145,7 +147,7 @@ export function WaveSection() {
         <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 10, letterSpacing: '.2em', color: accentColor, marginBottom: 16, transition: 'color .4s' }}>
           {isActive ? '⚡ ALUR KERJA RFID AKTIF' : '📡 ALUR KERJA RFID PASIF'}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 1, background: isActive ? `${GREEN}22` : 'rgba(125,196,240,.14)', border: `1px solid ${isActive ? `${GREEN}33` : 'rgba(125,196,240,.14)'}`, borderRadius: 6, overflow: 'hidden', transition: 'all .4s' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(auto-fit,minmax(200px,1fr))', gap: 1, background: isActive ? `${GREEN}22` : 'rgba(125,196,240,.14)', border: `1px solid ${isActive ? `${GREEN}33` : 'rgba(125,196,240,.14)'}`, borderRadius: 6, overflow: 'hidden', transition: 'all .4s' }}>
           {steps.map(s => (
             <div key={s.n} style={{ padding: '20px 22px', background: 'rgba(8,18,35,.82)' }}>
               <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontWeight: 700, fontSize: 26, color: accentColor, marginBottom: 10, transition: 'color .4s' }}>{s.n}</div>

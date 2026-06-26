@@ -17,7 +17,7 @@ export function AppsSection({ onSelect }: Props) {
     <section
       id="apps"
       style={{
-        position: 'relative', padding: '100px 6vw 70px',
+        position: 'relative', padding: 'clamp(60px,10vw,100px) clamp(5vw,6vw,6vw) 70px',
         maxWidth: 1320, margin: '0 auto', zIndex: 5,
       }}
     >
@@ -31,7 +31,7 @@ export function AppsSection({ onSelect }: Props) {
         Klik kartu untuk melihat simulasi 3D interaktif di setiap industri.
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 20, alignItems: 'stretch' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(280px,100%),1fr))', gap: 16, alignItems: 'stretch' }}>
         {USE_CASES.map((uc, i) => {
           const bandCol = BAND_COLOR[uc.band] ?? '#ffb24d';
           const info = BAND_INFO[uc.band];
