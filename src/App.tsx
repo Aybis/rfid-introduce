@@ -3,9 +3,11 @@ import { useLenis } from './hooks/useLenis';
 import { useIsMobile } from './hooks/useIsMobile';
 import { SplashScreen } from './components/organisms/SplashScreen';
 import { HeroSection } from './components/organisms/HeroSection';
+import { RelateSection } from './components/organisms/RelateSection';
 import { WaveSection } from './components/organisms/WaveSection';
 import { TeardownSection } from './components/organisms/TeardownSection';
 import { AppsSection } from './components/organisms/AppsSection';
+import { CompareSection } from './components/organisms/CompareSection';
 import { Footer } from './components/organisms/Footer';
 import { PlanModal } from './components/organisms/PlanModal';
 import type { UseCase } from './constants';
@@ -59,8 +61,8 @@ export default function App() {
             </button>
           ) : (
             <div style={{ display: 'flex', gap: 28 }}>
-              {[['#how', 'CARA KERJA'], ['#teardown', 'BEDAH'], ['#apps', 'APLIKASI']].map(([href, label]) => (
-                <a key={href} href={href} style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 12, letterSpacing: '.12em', color: href === '#apps' ? '#ffb24d' : '#4d7796', textDecoration: 'none' }}>{label}</a>
+              {[['#relate', 'SEHARI-HARI'], ['#how', 'CARA KERJA'], ['#teardown', 'BEDAH'], ['#apps', 'APLIKASI'], ['#compare', 'PERBANDINGAN']].map(([href, label]) => (
+                <a key={href} href={href} style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 12, letterSpacing: '.12em', color: href === '#compare' ? '#ffb24d' : '#4d7796', textDecoration: 'none' }}>{label}</a>
               ))}
             </div>
           )}
@@ -68,12 +70,12 @@ export default function App() {
         {/* Mobile dropdown */}
         {isMobile && menuOpen && (
           <div style={{ display: 'flex', flexDirection: 'column', borderTop: '1px solid rgba(125,196,240,.12)', background: 'rgba(5,15,28,.95)' }}>
-            {[['#how', 'CARA KERJA'], ['#teardown', 'BEDAH'], ['#apps', 'APLIKASI']].map(([href, label]) => (
+            {[['#relate', 'SEHARI-HARI'], ['#how', 'CARA KERJA'], ['#teardown', 'BEDAH'], ['#apps', 'APLIKASI'], ['#compare', 'PERBANDINGAN']].map(([href, label]) => (
               <a
                 key={href}
                 href={href}
                 onClick={() => setMenuOpen(false)}
-                style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 13, letterSpacing: '.12em', color: href === '#apps' ? '#ffb24d' : '#7fa9c9', textDecoration: 'none', padding: '14px 5vw', borderBottom: '1px solid rgba(125,196,240,.08)' }}
+                style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 13, letterSpacing: '.12em', color: href === '#compare' ? '#ffb24d' : '#7fa9c9', textDecoration: 'none', padding: '14px 5vw', borderBottom: '1px solid rgba(125,196,240,.08)' }}
               >
                 {label}
               </a>
@@ -98,9 +100,11 @@ export default function App() {
       {/* Sections */}
       <div style={{ position: 'relative', zIndex: 5 }}>
         <HeroSection />
+        <RelateSection />
         <WaveSection />
         <TeardownSection />
         <AppsSection onSelect={setActiveUC} />
+        <CompareSection />
         <Footer />
       </div>
 
