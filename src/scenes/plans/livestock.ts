@@ -71,12 +71,17 @@ export function initLivestock(
   barn.position.set(-9, 0, 0); scene.add(barn);
 
   // Fence panels
-  const fence = (x: number, z: number, rx: boolean) => {
-    const f = new THREE.Mesh(new THREE.BoxGeometry(rx ? 0.1 : 8, 1.2, rx ? 8 : 0.1), boxMat(0x5a3820));
+  const fence = (x: number, z: number, len: number, rx: boolean) => {
+    const f = new THREE.Mesh(new THREE.BoxGeometry(rx ? 0.12 : len, 1.2, rx ? len : 0.12), boxMat(0x5a3820));
     f.position.set(x, 0.6, z); scene.add(f);
   };
-  fence(-1, -5.5, false); fence(-1, 5.5, false);
-  fence(5.5, 0, true);
+  // Pasture outer enclosure
+  fence(11, -4, 10, false); fence(11, 4, 10, false);
+  fence(16, 0, 8, true);
+  // Chute — channels cows single-file from pasture gate (x=6) to scanner
+  fence(-0.5, 0, 13, false); fence(-0.5, 3, 13, false);
+  // Pasture entrance gate post (visual only — logic controls entry)
+  fence(6, 1.5, 3, true);
 
   // Scanner post with antenna
   const sp = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.0, 0.3), shelfMat);
@@ -153,7 +158,8 @@ export function initLivestock(
   for (let i = 0; i < HERD; i++) {
     const info = CATTLE[i % CATTLE.length];
     const cw = makeCow(info, i + 1);
-    const gx = 2 + (i % 5) * 2.2, gz = (i < 5 ? -3.2 : 3.2) + (i % 2 ? 0.6 : -0.6);
+    // All cows start in the pasture (x > 6, outside the chute fence)
+    const gx = 8 + (i % 5) * 1.8, gz = -3 + (i * 1.5 % 6.5);
     cw.c.position.set(gx, 0, gz); cw.c.rotation.y = Math.PI * 0.5 + ((i * 1.3) % 1);
     cw.graze = [gx, gz];
     scene.add(cw.c); cows.push(cw);
@@ -164,10 +170,11 @@ export function initLivestock(
   return {
     update: (dt, now) => {
       queueT += dt;
-      if (queueT > nextIn) {
+      const chuteOccupied = cows.some(c => c.state === 'walk' || c.state === 'enter');
+      if (queueT > nextIn && !chuteOccupied) {
         const c = cows.find(c => c.state === 'graze');
         if (c) { c.state = 'walk'; c.wt = 0; }
-        nextIn = queueT + 2.4;
+        nextIn = queueT + 1.2;
       }
       pulse = Math.max(0, pulse - dt * 1.4);
       const pr = 0.6 + (1 - pulse) * 0.6;
@@ -184,14 +191,28 @@ export function initLivestock(
 
         } else if (cw.state === 'walk') {
           cw.wt += dt;
-          const tx = -6.0, tz = 1.5;
-          const dx = tx - cw.c.position.x, dz = tz - cw.c.position.z;
-          const d = Math.hypot(dx, dz);
-          cw.c.rotation.y = Math.atan2(dz, dx) + Math.PI;
-          if (d > 0.15) { cw.c.position.x += dx / d * dt * 2.6; cw.c.position.z += dz / d * dt * 2.6; }
+          const chuteZ = 1.5;
           const sw = Math.sin(now * 0.012 + i) * 0.5;
           cw.legs[0].rotation.x = sw; cw.legs[3].rotation.x = sw;
           cw.legs[1].rotation.x = -sw; cw.legs[2].rotation.x = -sw;
+
+          // Phase 1: align to chute Z while moving slightly toward gate
+          if (Math.abs(cw.c.position.z - chuteZ) > 0.15) {
+            const dz = chuteZ - cw.c.position.z;
+            const dx = 6.5 - cw.c.position.x; // aim for chute entrance
+            const d = Math.hypot(dx, dz);
+            cw.c.rotation.y = Math.atan2(dz, dx) + Math.PI;
+            cw.c.position.x += dx / d * dt * 1.8;
+            cw.c.position.z += dz / d * dt * 2.2;
+          } else {
+            // Phase 2: walk straight through chute in -X
+            cw.c.position.z += (chuteZ - cw.c.position.z) * Math.min(1, dt * 6); // snap to center
+            cw.c.position.x -= dt * 2.6;
+            cw.c.rotation.y = Math.PI / 2;
+          }
+
+          const dx = -6.0 - cw.c.position.x, dz2 = chuteZ - cw.c.position.z;
+          const d = Math.hypot(dx, dz2);
           (cw.etag.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.6;
           if (d <= 0.5 && !cw.scanned) {
             cw.scanned = true; pulse = 1;
