@@ -12,48 +12,70 @@ export function initLogistics(
 
   const makeWarehouse = (x: number, roofCol: number) => {
     const g = new THREE.Group();
-    const back = new THREE.Mesh(new THREE.BoxGeometry(6, 4.2, 0.2), boxMat(0x1a2940));
-    back.position.set(0, 2.1, -3.0); g.add(back);
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.22, 6.2), boxMat(roofCol));
-    roof.position.set(0, 4.3, 0); g.add(roof);
-    [-3, 3].forEach(zw => {
-      const w = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4.2, 6.2), boxMat(0x1a2940));
-      w.position.set(zw > 0 ? 3 : -3, 2.1, 0); g.add(w);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(8, 7.5, 0.2), boxMat(0x1a2940));
+    back.position.set(0, 3.75, -3.0); g.add(back);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.3, 6.4), boxMat(roofCol));
+    roof.position.set(0, 7.65, 0); g.add(roof);
+    // Side walls at ±4 — wider than before so truck cab clears
+    [-4, 4].forEach(xw => {
+      const w = new THREE.Mesh(new THREE.BoxGeometry(0.2, 7.5, 6.4), boxMat(0x1a2940));
+      w.position.set(xw, 3.75, 0); g.add(w);
     });
-    for (let s = 0; s < 3; s++) {
-      const sh = new THREE.Mesh(new THREE.BoxGeometry(5, 0.13, 1.5), shelfMat);
-      sh.position.set(0, 0.8 + s * 1.15, -2.2); g.add(sh);
-      for (let i = -1; i <= 1; i++) {
+    // 4 shelf levels
+    for (let s = 0; s < 4; s++) {
+      const sh = new THREE.Mesh(new THREE.BoxGeometry(7, 0.13, 1.5), shelfMat);
+      sh.position.set(0, 0.8 + s * 1.5, -2.2); g.add(sh);
+      for (let i = -2; i <= 2; i++) {
         const b = new THREE.Mesh(
-          new THREE.BoxGeometry(1.0, 0.85, 1.1),
-          boxMat([0x4a3a2a, 0x274a3a, 0x3a3a5a][(i + 1) % 3]),
+          new THREE.BoxGeometry(1.0, 1.1, 1.1),
+          boxMat([0x4a3a2a, 0x274a3a, 0x3a3a5a][(Math.abs(i) + s) % 3]),
         );
-        b.position.set(i * 1.4, 0.8 + s * 1.15 + 0.48, -2.2); g.add(b);
+        b.position.set(i * 1.4, 0.8 + s * 1.5 + 0.6, -2.2); g.add(b);
       }
+    }
+    // Conveyor belt — runs in Z from inside warehouse to dock (z=-2.3 to z=3.0)
+    const beltMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 });
+    const belt = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.10, 5.5), beltMat);
+    belt.position.set(0, 0.86, 0.35); g.add(belt);
+    const frameMat = boxMat(0x2a3a4a);
+    [-0.68, 0.68].forEach(fx => {
+      const fr = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, 5.5), frameMat);
+      fr.position.set(fx, 0.86, 0.35); g.add(fr);
+    });
+    for (let rz = -2.3; rz <= 2.9; rz += 0.45) {
+      const rol = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.09, 0.09, 1.4, 8),
+        new THREE.MeshStandardMaterial({ color: 0x4a5a6a, metalness: 0.7, roughness: 0.2 }),
+      );
+      rol.rotation.z = Math.PI / 2; rol.position.set(0, 0.90, rz); g.add(rol);
+    }
+    for (const lz of [-2.2, 0.35, 2.7]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.88, 0.08), frameMat);
+      leg.position.set(0, 0.44, lz); g.add(leg);
     }
     g.position.set(x, 0, 0); scene.add(g);
   };
-  makeWarehouse(-12, 0x2f6da0); makeWarehouse(12, 0x4a7a4a);
+  makeWarehouse(-20, 0x2f6da0); makeWarehouse(20, 0x4a7a4a);
 
-  // Road
+  // Road — wide enough for x=±16 warehouses
   const road = new THREE.Mesh(
-    new THREE.PlaneGeometry(20, 3.6),
+    new THREE.PlaneGeometry(52, 8.0),
     new THREE.MeshStandardMaterial({ color: 0x101a26, roughness: 0.95 }),
   );
   road.rotation.x = -Math.PI / 2; road.position.set(0, 0.02, 3.2); scene.add(road);
-  for (let i = -4; i <= 4; i++) {
+  for (let i = -11; i <= 11; i++) {
     const ln = new THREE.Mesh(
-      new THREE.BoxGeometry(1.1, 0.02, 0.16),
+      new THREE.BoxGeometry(1.1, 0.02, 0.18),
       new THREE.MeshBasicMaterial({ color: 0xffd9a0 }),
     );
     ln.position.set(i * 2.3, 0.04, 3.2); scene.add(ln);
   }
 
-  // RFID portals
-  const PA = makePortal(-1.4, 1.4, 3.2, 0xffb24d, scene, shelfMat);
-  PA.grp.position.set(-12, 0, 1.5);
-  const PB = makePortal(-1.4, 1.4, 3.2, 0xffb24d, scene, shelfMat);
-  PB.grp.position.set(12, 0, 1.5);
+  // RFID portals — above conveyor at each warehouse entrance
+  const PA = makePortal(-3.0, 3.0, 5.5, 0xffb24d, scene, shelfMat);
+  PA.grp.position.set(-20, 0, 1.5);
+  const PB = makePortal(-3.0, 3.0, 5.5, 0xffb24d, scene, shelfMat);
+  PB.grp.position.set(20, 0, 1.5);
 
   // Truck
   const truck = new THREE.Group();
@@ -88,13 +110,13 @@ export function initLogistics(
     g.visible = false; g.scale.set(1, 0, 1);
     return { g, ctag, prog: 0, loadLogged: false, unloadLogged: false };
   });
-  truck.position.set(-12, 0, 3.2); scene.add(truck);
+  truck.position.set(-13, 0, 3.2); scene.add(truck);
 
   // Workers
   const wkA = makeHuman(0xffb24d, 0x223149);
-  wkA.position.set(-11.2, 0, 1.8); wkA.rotation.y = -Math.PI / 4; scene.add(wkA);
+  wkA.position.set(-19.2, 0, 1.8); wkA.rotation.y = -Math.PI / 4; scene.add(wkA);
   const wkB = makeHuman(0x7fc4f0, 0x223149);
-  wkB.position.set(11.2, 0, 1.8); wkB.rotation.y = Math.PI + Math.PI / 4; scene.add(wkB);
+  wkB.position.set(19.2, 0, 1.8); wkB.rotation.y = Math.PI + Math.PI / 4; scene.add(wkB);
 
   let stage = 0, stageT = 0, flashA = 0, flashB = 0;
   const nextStage = (s: number) => { stage = s; stageT = 0; };
@@ -121,7 +143,7 @@ export function initLogistics(
       } else if (stage === 1) {
         wkA.userData.legL.rotation.x = 0; wkA.userData.legR.rotation.x = 0;
         truck.rotation.y = 0; truck.position.x += dt * 6.0;
-        if (truck.position.x >= 12) { truck.position.x = 12; cbs.logEvent('Tiba di Gudang Agen', '#7fc4f0'); nextStage(2); }
+        if (truck.position.x >= 13) { truck.position.x = 13; cbs.logEvent('Tiba di Gudang Agen', '#7fc4f0'); nextStage(2); }
 
       } else if (stage === 2) {
         wkB.userData.legL.rotation.x = sw; wkB.userData.legR.rotation.x = -sw;
@@ -140,8 +162,8 @@ export function initLogistics(
       } else {
         wkB.userData.legL.rotation.x = 0; wkB.userData.legR.rotation.x = 0;
         truck.rotation.y = Math.PI; truck.position.x -= dt * 8.5;
-        if (truck.position.x <= -12) {
-          truck.position.x = -12; truck.rotation.y = 0;
+        if (truck.position.x <= -13) {
+          truck.position.x = -13; truck.rotation.y = 0;
           cargos.forEach(c => { c.g.visible = false; c.g.scale.set(1, 0, 1); c.prog = 0; c.loadLogged = false; c.unloadLogged = false; });
           cbs.resetCount(); cbs.clearLog(); nextStage(0);
         }
@@ -156,7 +178,7 @@ export function initLogistics(
         }
       });
     },
-    target: new THREE.Vector3(0, 1.8, 1.5),
-    orbitOpts: { az: 0.12, pol: 0.68, r: 44, auto: 0.0008 },
+    target: new THREE.Vector3(0, 2.8, 1.5),
+    orbitOpts: { az: 0.12, pol: 0.72, r: 80, auto: 0.0008 },
   };
 }

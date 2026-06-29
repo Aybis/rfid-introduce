@@ -13,11 +13,14 @@ button{font-family:'IBM Plex Mono',monospace;cursor:pointer;}
 @keyframes scrolldot{0%{transform:translateY(0);opacity:0}30%{opacity:1}100%{transform:translateY(11px);opacity:0}}
 @keyframes splashmark{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
 @keyframes modalin{0%{opacity:0;transform:scale(.98)}100%{opacity:1;transform:scale(1)}}
+@keyframes hookpulse{0%{transform:translate(-50%,-50%) scale(.3);opacity:.7}100%{transform:translate(-50%,-50%) scale(2.2);opacity:0}}
+@keyframes hookdot{0%,100%{box-shadow:0 0 0 0 rgba(255,178,77,.6)}50%{box-shadow:0 0 0 6px rgba(255,178,77,.0)}}
+@keyframes countup{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:none}}
 
 .card-hover{transition:border-color .25s,transform .25s,box-shadow .25s;}
 .card-hover:hover{border-color:#ffb24d!important;transform:translateY(-4px);box-shadow:0 14px 40px rgba(0,0,0,.4);}
-.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1);}
-.reveal.visible{opacity:1;transform:none;}
+.reveal-box{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1);}
+.reveal-box[data-visible="true"]{opacity:1;transform:none;}
 
 /* ── Mobile global fixes ─────────────────────────────── */
 @media (max-width: 768px) {

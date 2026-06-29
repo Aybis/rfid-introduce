@@ -43,7 +43,7 @@ export function TeardownSection() {
         }}>
           {!isMobile && (
             <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 10, letterSpacing: '.22em', color: '#ffb24d', marginBottom: 12 }}>
-              SECTION 03 · BEDAH TAG
+              SECTION 04 · BEDAH TAG
             </div>
           )}
           <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 10, letterSpacing: '.2em', color: 'rgba(255,178,77,.55)', marginBottom: isMobile ? 4 : 16 }}>

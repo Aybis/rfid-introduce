@@ -74,7 +74,7 @@ export function initGate(
     );
     rg.position.set(lx - 0.8, 1.15, 0.55); scene.add(rg);
 
-    return { lx, grant, fp, fp2, reader, light, person, badge, rg, t: grant ? 0 : 1.0, prevZ: 5.5, scanned: false, pulse: 0, wait: 0 };
+    return { lx, grant, fp, fp2, reader, light, person, badge, rg, t: 0, prevZ: 5.5, scanned: false, pulse: 0, wait: 0 };
   };
 
   const lanes = [makeLane(-3.2, true), makeLane(3.2, false)];

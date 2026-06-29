@@ -6,4 +6,15 @@ export default defineConfig({
   optimizeDeps: {
     include: ['three', 'gsap', '@studio-freight/lenis'],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ['three'],
+          gsap: ['gsap'],
+          vendor: ['react', 'react-dom', '@studio-freight/lenis', '@phosphor-icons/react'],
+        },
+      },
+    },
+  },
 });
