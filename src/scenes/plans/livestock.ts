@@ -60,14 +60,16 @@ export function initLivestock(
 
   // Barn
   const barn = new THREE.Group();
+  // Barn body centered at z=1.5 to match chute center
   const bw = new THREE.Mesh(new THREE.BoxGeometry(5, 3.2, 7), boxMat(0x7a3128));
-  bw.position.set(0, 1.6, 0); barn.add(bw);
+  bw.position.set(0, 1.6, 1.5); barn.add(bw);
   const roofL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.4, 7.4), boxMat(0x5a2018));
-  roofL.position.set(-1.4, 3.6, 0); roofL.rotation.z = 0.7; barn.add(roofL);
+  roofL.position.set(-1.4, 3.6, 1.5); roofL.rotation.z = 0.7; barn.add(roofL);
   const roofR = roofL.clone(); roofR.position.x = 1.4; roofR.rotation.z = -0.7; barn.add(roofR);
+  // Doorway aligned with chute (z=0 to z=3, center z=1.5)
   const doorway = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.4, 3.0),
     new THREE.MeshStandardMaterial({ color: 0x100a08 }));
-  doorway.position.set(2.5, 1.2, 0); barn.add(doorway);
+  doorway.position.set(2.5, 1.2, 1.5); barn.add(doorway);
   barn.position.set(-9, 0, 0); scene.add(barn);
 
   // Fence panels
@@ -78,17 +80,20 @@ export function initLivestock(
   // Pasture outer enclosure
   fence(11, -4, 10, false); fence(11, 4, 10, false);
   fence(16, 0, 8, true);
+  // Close the gap at x=6: from pasture to chute opening (z=0) and above chute (z=3 to z=4)
+  fence(6, -2, 4, true);   // z=-4 to z=0
+  fence(6, 3.5, 1, true);  // z=3 to z=4
   // Chute — channels cows single-file from pasture gate (x=6) to scanner
   fence(-0.5, 0, 13, false); fence(-0.5, 3, 13, false);
-  // Pasture entrance gate post (visual only — logic controls entry)
-  fence(6, 1.5, 3, true);
+  // Gate posts only (entrance pillars, no arm)
+  fence(6, 0, 0.3, true); fence(6, 3, 0.3, true);
 
-  // Scanner post with antenna
+  // Scanner post — on the side of chute (z=0 edge), not blocking the path
   const sp = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.0, 0.3), shelfMat);
-  sp.position.set(-6.0, 1.0, 1.7); scene.add(sp);
+  sp.position.set(-6.0, 1.0, -0.3); scene.add(sp);
   const spanel = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.12),
     new THREE.MeshStandardMaterial({ color: 0x7fc4f0, emissive: 0x3a7fb5, emissiveIntensity: 0.6 }));
-  spanel.position.set(-6.0, 1.2, 1.5); scene.add(spanel);
+  spanel.position.set(-6.0, 1.2, -0.1); scene.add(spanel);
 
   // Weighing platform under scanner
   const scale = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.08, 2.0),
@@ -102,7 +107,7 @@ export function initLivestock(
     new THREE.RingGeometry(0.5, 0.55, 32),
     new THREE.MeshBasicMaterial({ color: 0xffb24d, transparent: true, opacity: 0, side: THREE.DoubleSide }),
   );
-  ring.position.set(-6.0, 1.2, 1.5); scene.add(ring);
+  ring.position.set(-6.0, 1.2, -0.1); scene.add(ring);
 
   const makeCow = (info: typeof CATTLE[0], id: number): Cow => {
     const c = new THREE.Group();
@@ -196,23 +201,20 @@ export function initLivestock(
           cw.legs[0].rotation.x = sw; cw.legs[3].rotation.x = sw;
           cw.legs[1].rotation.x = -sw; cw.legs[2].rotation.x = -sw;
 
-          // Phase 1: align to chute Z while moving slightly toward gate
-          if (Math.abs(cw.c.position.z - chuteZ) > 0.15) {
+          // Phase 1: move ONLY in Z to align with chute center (no diagonal)
+          if (Math.abs(cw.c.position.z - chuteZ) > 0.12) {
             const dz = chuteZ - cw.c.position.z;
-            const dx = 6.5 - cw.c.position.x; // aim for chute entrance
-            const d = Math.hypot(dx, dz);
-            cw.c.rotation.y = Math.atan2(dz, dx) + Math.PI;
-            cw.c.position.x += dx / d * dt * 1.8;
-            cw.c.position.z += dz / d * dt * 2.2;
+            cw.c.position.z += Math.sign(dz) * Math.min(Math.abs(dz), dt * 2.2);
+            cw.c.rotation.y = dz > 0 ? Math.PI / 2 : -Math.PI / 2;
           } else {
             // Phase 2: walk straight through chute in -X
-            cw.c.position.z += (chuteZ - cw.c.position.z) * Math.min(1, dt * 6); // snap to center
+            cw.c.position.z = chuteZ;
             cw.c.position.x -= dt * 2.6;
-            cw.c.rotation.y = Math.PI / 2;
+            cw.c.rotation.y = Math.PI; // cow head (+X) faces -X direction
           }
 
-          const dx = -6.0 - cw.c.position.x, dz2 = chuteZ - cw.c.position.z;
-          const d = Math.hypot(dx, dz2);
+          const dx = -6.0 - cw.c.position.x;
+          const d = Math.abs(dx);
           (cw.etag.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.6;
           if (d <= 0.5 && !cw.scanned) {
             cw.scanned = true; pulse = 1;

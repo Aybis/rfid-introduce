@@ -10,8 +10,8 @@ export function Footer() {
       value: 'CTA · Bands · Teardown · Apps',
       color: '#e8f3fb',
     },
-    { label: 'CREATOR', value: 'Aybis', color: '#e8f3fb' },
-    { label: 'VERSION', value: '2.0 — 2026', color: '#ffb24d' },
+    { label: 'CREATOR', value: 'Muchtar', color: '#e8f3fb' },
+    { label: 'VERSION', value: '1.0 — 2026', color: '#ffb24d' },
   ];
 
   return (
